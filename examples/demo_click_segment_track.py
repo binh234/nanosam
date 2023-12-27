@@ -25,14 +25,13 @@ parser.add_argument("--image_encoder", type=str, default="data/resnet18_image_en
 parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.engine")
 args = parser.parse_args()
 
+
 def cv2_to_pil(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return PIL.Image.fromarray(image)
 
-predictor = Predictor(
-    args.image_encoder,
-    args.mask_decoder
-)
+
+predictor = Predictor(args.image_encoder, args.mask_decoder)
 
 tracker = Tracker(predictor)
 
@@ -42,20 +41,18 @@ point = None
 cap = cv2.VideoCapture(0)
 
 
-def init_track(event,x,y,flags,param):
+def init_track(event, x, y, flags, param):
     global mask, point
     if event == cv2.EVENT_LBUTTONDBLCLK:
         mask = tracker.init(image_pil, point=(x, y))
         point = (x, y)
 
 
-cv2.namedWindow('image')
-cv2.setMouseCallback('image',init_track)
+cv2.namedWindow("image")
+cv2.setMouseCallback("image", init_track)
 
 while True:
-
     re, image = cap.read()
-
 
     if not re:
         break
@@ -64,10 +61,10 @@ while True:
 
     if tracker.token is not None:
         mask, point = tracker.update(image_pil)
-    
+
     # Draw mask
     if mask is not None:
-        bin_mask = (mask[0,0].detach().cpu().numpy() < 0)
+        bin_mask = mask[0, 0].detach().cpu().numpy() < 0
         green_image = np.zeros_like(image)
         green_image[:, :] = (0, 185, 118)
         green_image[bin_mask] = 0
@@ -76,22 +73,15 @@ while True:
 
     # Draw center
     if point is not None:
-
-        image = cv2.circle(
-            image,
-            point,
-            5,
-            (0, 185, 118),
-            -1
-        )
+        image = cv2.circle(image, point, 5, (0, 185, 118), -1)
 
     cv2.imshow("image", image)
 
     ret = cv2.waitKey(1)
 
-    if ret == ord('q'):
+    if ret == ord("q"):
         break
-    elif ret == ord('r'):
+    elif ret == ord("r"):
         tracker.reset()
         mask = None
         box = None

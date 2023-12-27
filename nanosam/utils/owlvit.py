@@ -16,12 +16,8 @@
 import requests
 import PIL.Image
 import torch
-from transformers import (
-    OwlViTProcessor,
-    OwlViTForObjectDetection
-)
+from transformers import OwlViTProcessor, OwlViTForObjectDetection
 from typing import Sequence, List, Tuple
-
 
 
 class OwlVit(object):
@@ -34,12 +30,22 @@ class OwlVit(object):
         inputs = self.processor(text=texts, images=image, return_tensors="pt")
         outputs = self.model(**inputs)
         target_sizes = torch.Tensor([image.size[::-1]])
-        results = self.processor.post_process_object_detection(outputs=outputs, target_sizes=target_sizes, threshold=self.threshold)
+        results = self.processor.post_process_object_detection(
+            outputs=outputs, target_sizes=target_sizes, threshold=self.threshold
+        )
         i = 0
-        boxes, scores, labels = results[i]["boxes"], results[i]["scores"], results[i]["labels"]
+        boxes, scores, labels = (
+            results[i]["boxes"],
+            results[i]["scores"],
+            results[i]["labels"],
+        )
         detections = []
         for box, score, label in zip(boxes, scores, labels):
-            detection = {"bbox": box.tolist(), "score": float(score), "label": int(label), "text": texts[label]}
+            detection = {
+                "bbox": box.tolist(),
+                "score": float(score),
+                "label": int(label),
+                "text": texts[label],
+            }
             detections.append(detection)
         return detections
-

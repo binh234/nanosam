@@ -25,37 +25,42 @@ parser.add_argument("--image_encoder", type=str, default="data/resnet18_image_en
 parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.engine")
 args = parser.parse_args()
 
+
 def get_torso_points(pose):
     return pose_to_sam_points(
         pose,
         ["left_shoulder", "right_shoulder"],
-        ["nose", "left_ear", "right_ear", "right_wrist", "left_wrist", "left_knee", "right_knee"]
+        [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "right_wrist",
+            "left_wrist",
+            "left_knee",
+            "right_knee",
+        ],
     )
+
 
 def cv2_to_pil(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return PIL.Image.fromarray(image)
 
+
 pose_model = PoseDetector(
-    "data/densenet121_baseline_att_256x256_B_epoch_160.pth",
-    "assets/human_pose.json"
+    "data/densenet121_baseline_att_256x256_B_epoch_160.pth", "assets/human_pose.json"
 )
 
-predictor = Predictor(
-    args.image_encoder,
-    args.mask_decoder
-)
+predictor = Predictor(args.image_encoder, args.mask_decoder)
 
 mask = None
 
 cap = cv2.VideoCapture(0)
 
-cv2.namedWindow('image')
+cv2.namedWindow("image")
 
 while True:
-
     re, image = cap.read()
-
 
     if not re:
         break
@@ -71,16 +76,15 @@ while True:
 
         predictor.set_image(image_pil)
         mask, _, _ = predictor.predict(points, point_labels)
-    
+
         # Draw mask
         if mask is not None:
-            bin_mask = (mask[0,0].detach().cpu().numpy() < 0)
+            bin_mask = mask[0, 0].detach().cpu().numpy() < 0
             green_image = np.zeros_like(image)
             green_image[:, :] = (0, 185, 118)
             green_image[bin_mask] = 0
 
             image = cv2.addWeighted(image, 0.4, green_image, 0.6, 0)
-
 
         for pt, lab in zip(points, point_labels):
             xy = (int(pt[0]), int(pt[1]))
@@ -89,12 +93,11 @@ while True:
             else:
                 cv2.circle(image, xy, 8, (0, 0, 185), -1)
 
-
     cv2.imshow("image", image)
 
     ret = cv2.waitKey(1)
 
-    if ret == ord('q'):
+    if ret == ord("q"):
         break
 
 

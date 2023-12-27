@@ -22,20 +22,16 @@ from nanosam.utils.predictor import Predictor
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument("image", type=str)
-    parser.add_argument("--prompt", nargs='+', required=True)
+    parser.add_argument("--prompt", nargs="+", required=True)
     parser.add_argument("--image_encoder", type=str, default="data/resnet18_image_encoder.engine")
     parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.engine")
     parser.add_argument("--thresh", type=float, default=0.1)
     args = parser.parse_args()
-        
+
     def bbox2points(bbox):
-        points = np.array([
-            [bbox[0], bbox[1]],
-            [bbox[2], bbox[3]]
-        ])
+        points = np.array([[bbox[0], bbox[1]], [bbox[2], bbox[3]]])
 
         point_labels = np.array([2, 3])
 
@@ -44,8 +40,7 @@ if __name__ == "__main__":
     def draw_bbox(bbox):
         x = [bbox[0], bbox[2], bbox[2], bbox[0], bbox[0]]
         y = [bbox[1], bbox[1], bbox[3], bbox[3], bbox[1]]
-        plt.plot(x, y, 'g-')
-
+        plt.plot(x, y, "g-")
 
     detector = OwlVit(args.thresh)
 
@@ -53,10 +48,7 @@ if __name__ == "__main__":
 
     detections = detector.predict(image, texts=args.prompt)
 
-    sam_predictor = Predictor(
-        args.image_encoder,
-        args.mask_decoder
-    )
+    sam_predictor = Predictor(args.image_encoder, args.mask_decoder)
 
     sam_predictor.set_image(image)
     N = len(detections)
@@ -65,11 +57,11 @@ if __name__ == "__main__":
         ax = plt.subplot(a, b, c)
         ax.set_xticklabels([])
         ax.set_yticklabels([])
-        ax.axis('off')
+        ax.axis("off")
 
     def draw_detection(index):
         subplot_notick(2, N, index + 1)
-        bbox = detections[index]['bbox']
+        bbox = detections[index]["bbox"]
         points, point_labels = bbox2points(bbox)
         mask, _, _ = sam_predictor.predict(points, point_labels)
         plt.imshow(image)
@@ -77,7 +69,6 @@ if __name__ == "__main__":
         subplot_notick(2, N, N + index + 1)
         plt.imshow(image)
         plt.imshow(mask[0, 0].detach().cpu() > 0, alpha=0.5)
-
 
     AR = image.width / image.height
     plt.figure(figsize=(25, 10))

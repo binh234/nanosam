@@ -21,6 +21,7 @@ def register_model(name: str):
     def _register_model(fn):
         MODELS[name] = fn
         return fn
+
     return _register_model
 
 

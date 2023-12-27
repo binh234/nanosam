@@ -19,5 +19,6 @@ from .timm_image_encoder import (
     TimmImageEncoder,
     resnet18,
     resnet34,
-    resnet50
+    resnet50,
+    efficientvit_b0,
 )

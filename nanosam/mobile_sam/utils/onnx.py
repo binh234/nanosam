@@ -111,7 +111,7 @@ class SamOnnxModel(nn.Module):
         point_coords: torch.Tensor,
         point_labels: torch.Tensor,
         mask_input: torch.Tensor,
-        has_mask_input: torch.Tensor
+        has_mask_input: torch.Tensor,
     ):
         sparse_embedding = self._embed_points(point_coords, point_labels)
         dense_embedding = self._embed_masks(mask_input, has_mask_input)

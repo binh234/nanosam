@@ -19,17 +19,20 @@ from nanosam.mobile_sam import sam_model_registry
 import argparse
 
 if __name__ == "__main__":
-        
-    parser = argparse.ArgumentParser(
-        description="Export the SAM image encoder to an ONNX model."
+    parser = argparse.ArgumentParser(description="Export the SAM image encoder to an ONNX model.")
+
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        required=True,
+        help="The path to the SAM model checkpoint.",
     )
 
     parser.add_argument(
-        "--checkpoint", type=str, required=True, help="The path to the SAM model checkpoint."
-    )
-
-    parser.add_argument(
-        "--output", type=str, required=True, help="The filename to save the ONNX model to."
+        "--output",
+        type=str,
+        required=True,
+        help="The filename to save the ONNX model to.",
     )
 
     parser.add_argument(
@@ -38,12 +41,8 @@ if __name__ == "__main__":
         required=True,
         help="In ['default', 'vit_h', 'vit_l', 'vit_b']. Which type of SAM model to export.",
     )
-    
-    parser.add_argument(
-        "--batch_size",
-        type=int,
-        default=1
-    )
+
+    parser.add_argument("--batch_size", type=int, default=1)
 
     parser.add_argument(
         "--opset",
@@ -69,8 +68,6 @@ if __name__ == "__main__":
             args.output,
             input_names=["image"],
             output_names=["image_embeddings"],
-            dynamic_axes={
-                "image": {0: "batch_size"}
-            },
-            opset_version=args.opset
+            dynamic_axes={"image": {0: "batch_size"}},
+            opset_version=args.opset,
         )

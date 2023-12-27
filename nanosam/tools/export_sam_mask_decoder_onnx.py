@@ -1,5 +1,5 @@
 # Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-#   
+#
 #   Adapted from https://github.com/ChaoningZhang/MobileSAM/blob/master/scripts/export_onnx_model.py
 #
 # Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -28,7 +28,10 @@ parser = argparse.ArgumentParser(
 )
 
 parser.add_argument(
-    "--checkpoint", type=str, required=True, help="The path to the SAM model checkpoint."
+    "--checkpoint",
+    type=str,
+    required=True,
+    help="The path to the SAM model checkpoint.",
 )
 
 parser.add_argument(
