@@ -98,7 +98,7 @@ image = PIL.Image.open("assets/john_1.jpg")
 detections = pose_model.predict(image)
 
 sam_predictor = Predictor(
-    "data/resnet18_image_encoder.engine", "data/mobile_sam_mask_decoder.engine"
+    "data/resnet18_image_encoder.onnx", "data/mobile_sam_mask_decoder.onnx"
 )
 
 pose = detections[0]
@@ -124,7 +124,7 @@ def predict_and_show(N, index, pose, fg_points, bg_points):
     plt.plot(points[point_labels != 1, 0], points[point_labels != 1, 1], "r.")
     subplot_notick(2, N, N + index + 1)
     plt.imshow(image)
-    plt.imshow(mask[0, 0].detach().cpu() > 0, alpha=0.5)
+    plt.imshow(mask[0, 0]> 0, alpha=0.5)
 
 
 N = 4

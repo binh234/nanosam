@@ -17,12 +17,19 @@ import PIL.Image
 import cv2
 import numpy as np
 import argparse
+from nanosam.utils.onnx_model import PROVIDERS_DICT
 from nanosam.utils.predictor import Predictor
 from nanosam.utils.tracker import Tracker
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--image_encoder", type=str, default="data/resnet18_image_encoder.engine")
-parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.engine")
+parser.add_argument("--image_encoder", type=str, default="data/resnet18_image_encoder.onnx")
+parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.onnx")
+parser.add_argument(
+    "--provider",
+    type=str,
+    default="cuda",
+    choices=PROVIDERS_DICT.keys(),
+)
 args = parser.parse_args()
 
 
@@ -31,7 +38,7 @@ def cv2_to_pil(image):
     return PIL.Image.fromarray(image)
 
 
-predictor = Predictor(args.image_encoder, args.mask_decoder)
+predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider)
 
 tracker = Tracker(predictor)
 
@@ -64,7 +71,7 @@ while True:
 
     # Draw mask
     if mask is not None:
-        bin_mask = mask[0, 0].detach().cpu().numpy() < 0
+        bin_mask = mask[0, 0] < 0
         green_image = np.zeros_like(image)
         green_image[:, :] = (0, 185, 118)
         green_image[bin_mask] = 0

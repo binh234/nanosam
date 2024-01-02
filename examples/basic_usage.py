@@ -17,17 +17,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import PIL.Image
 import argparse
+from nanosam.utils.onnx_model import PROVIDERS_DICT
 from nanosam.utils.predictor import Predictor
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_encoder", type=str, default="data/resnet18_image_encoder.engine")
-    parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.engine")
+    parser.add_argument("--image_encoder", type=str, default="data/resnet18_image_encoder.onnx")
+    parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.onnx")
+    parser.add_argument(
+        "--provider",
+        type=str,
+        default="cuda",
+        choices=PROVIDERS_DICT.keys(),
+    )
     args = parser.parse_args()
 
     # Instantiate TensorRT predictor
-    predictor = Predictor(args.image_encoder, args.mask_decoder)
+    predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider)
 
     # Read image and run image encoder
     image = PIL.Image.open("assets/dogs.jpg")
@@ -42,7 +49,7 @@ if __name__ == "__main__":
 
     mask, _, _ = predictor.predict(points, point_labels)
 
-    mask = (mask[0, 0] > 0).detach().cpu().numpy()
+    mask = mask[0, 0] > 0
 
     # Draw resykts
     plt.imshow(image)
@@ -51,3 +58,6 @@ if __name__ == "__main__":
     y = [bbox[1], bbox[1], bbox[3], bbox[3], bbox[1]]
     plt.plot(x, y, "g-")
     plt.savefig("data/basic_usage_out.jpg")
+    plt.show(block=False)
+    plt.pause(4)
+    plt.close()
