@@ -47,7 +47,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--opset",
         type=int,
-        default=16,
+        default=11,
         help="The ONNX opset version to use. Must be >=11",
     )
 
@@ -60,7 +60,9 @@ if __name__ == "__main__":
         mobile_sam.to(device=device)
         mobile_sam.eval()
 
-        data = torch.randn(args.batch_size, 3, 1024, 1024).to(device)
+        image_size = mobile_sam.image_encoder.img_size
+        print("Model's input size: ", image_size)
+        data = torch.randn(args.batch_size, 3, image_size, image_size).to(device)
 
         torch.onnx.export(
             mobile_sam.image_encoder,

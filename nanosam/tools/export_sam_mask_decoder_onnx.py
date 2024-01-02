@@ -81,25 +81,6 @@ parser.add_argument(
     ),
 )
 
-parser.add_argument(
-    "--use-stability-score",
-    action="store_true",
-    help=(
-        "Replaces the model's predicted mask quality score with the stability "
-        "score calculated on the low resolution masks using an offset of 1.0. "
-    ),
-)
-
-parser.add_argument(
-    "--return-extra-metrics",
-    action="store_true",
-    help=(
-        "The model will return five results: (masks, scores, stability_scores, "
-        "areas, low_res_logits) instead of the usual three. This can be "
-        "significantly slower for high resolution outputs."
-    ),
-)
-
 
 def run_export(
     model_type: str,
@@ -187,8 +168,8 @@ if __name__ == "__main__":
         opset=args.opset,
         return_single_mask=args.return_single_mask,
         gelu_approximate=args.gelu_approximate,
-        use_stability_score=args.use_stability_score,
-        return_extra_metrics=args.return_extra_metrics,
+        use_stability_score=False,
+        return_extra_metrics=False,
     )
 
     if args.quantize_out is not None:
