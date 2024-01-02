@@ -13,55 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from torch2trt import TRTModule
-from typing import Tuple
-import tensorrt as trt
-import PIL.Image
-import torch
+import cv2
 import numpy as np
-import torch.nn.functional as F
+import PIL.Image
 
-
-def load_mask_decoder_engine(path: str):
-    with trt.Logger() as logger, trt.Runtime(logger) as runtime:
-        with open(path, "rb") as f:
-            engine_bytes = f.read()
-        engine = runtime.deserialize_cuda_engine(engine_bytes)
-
-    mask_decoder_trt = TRTModule(
-        engine=engine,
-        input_names=[
-            "image_embeddings",
-            "point_coords",
-            "point_labels",
-            "mask_input",
-            "has_mask_input",
-        ],
-        output_names=["iou_predictions", "low_res_masks"],
-    )
-
-    return mask_decoder_trt
-
-
-def load_image_encoder_engine(path: str):
-    with trt.Logger() as logger, trt.Runtime(logger) as runtime:
-        with open(path, "rb") as f:
-            engine_bytes = f.read()
-        engine = runtime.deserialize_cuda_engine(engine_bytes)
-
-    image_encoder_trt = TRTModule(
-        engine=engine, input_names=["image"], output_names=["image_embeddings"]
-    )
-
-    return image_encoder_trt
+from .onnx_model import OnnxModel
 
 
 def preprocess_image(image, size: int = 512):
     if isinstance(image, np.ndarray):
         image = PIL.Image.fromarray(image)
 
-    image_mean = torch.tensor([123.675, 116.28, 103.53])[:, None, None]
-    image_std = torch.tensor([58.395, 57.12, 57.375])[:, None, None]
+    image_mean = np.asarray([123.675, 116.28, 103.53])[:, None, None]
+    image_std = np.asarray([58.395, 57.12, 57.375])[:, None, None]
 
     image_pil = image
     aspect_ratio = image_pil.width / image_pil.height
@@ -73,14 +37,13 @@ def preprocess_image(image, size: int = 512):
         resize_width = int(size * aspect_ratio)
 
     image_pil_resized = image_pil.resize((resize_width, resize_height))
-    image_np_resized = np.asarray(image_pil_resized)
-    image_torch_resized = torch.from_numpy(image_np_resized).permute(2, 0, 1)
-    image_torch_resized_normalized = (image_torch_resized.float() - image_mean) / image_std
-    image_tensor = torch.zeros((1, 3, size, size))
-    image_tensor[0, :, :resize_height, :resize_width] = image_torch_resized_normalized
+    image_np_resized = np.asarray(image_pil_resized, dtype=np.float32)
+    image_np_resized = np.transpose(image_np_resized, (2, 0, 1))
+    image_np_resized_normalized = (image_np_resized - image_mean) / image_std
+    image_tensor = np.zeros((1, 3, size, size), dtype=np.float32)
+    image_tensor[0, :, :resize_height, :resize_width] = image_np_resized_normalized
 
-    return image_tensor.cuda()
-
+    return image_tensor
 
 def preprocess_points(points, image_size, size: int = 1024):
     scale = size / max(*image_size)
@@ -88,23 +51,21 @@ def preprocess_points(points, image_size, size: int = 1024):
     return points
 
 
-def run_mask_decoder(
-    mask_decoder_engine, features, points=None, point_labels=None, mask_input=None
-):
+def run_mask_decoder(mask_decoder, features, points=None, point_labels=None, mask_input=None):
     if points is not None:
         assert point_labels is not None
         assert len(points) == len(point_labels)
 
-    image_point_coords = torch.tensor([points]).float().cuda()
-    image_point_labels = torch.tensor([point_labels]).float().cuda()
+    image_point_coords = np.asarray([points], dtype=np.float32)
+    image_point_labels = np.asarray([point_labels], dtype=np.float32)
 
     if mask_input is None:
-        mask_input = torch.zeros(1, 1, 256, 256).float().cuda()
-        has_mask_input = torch.tensor([0]).float().cuda()
+        mask_input = np.zeros((1, 1, 256, 256), dtype=np.float32)
+        has_mask_input = np.zeros(1, dtype=np.float32)
     else:
-        has_mask_input = torch.tensor([1]).float().cuda()
+        has_mask_input = np.ones(1, dtype=np.float32)
 
-    iou_predictions, low_res_masks = mask_decoder_engine(
+    iou_predictions, low_res_masks = mask_decoder(
         features, image_point_coords, image_point_labels, mask_input, has_mask_input
     )
 
@@ -112,6 +73,16 @@ def run_mask_decoder(
 
 
 def upscale_mask(mask, image_shape, size=256):
+    """_summary_
+
+    Args:
+        mask (np.ndarray): Input mask
+        image_shape (Union[int, Tuple[int, int]]): Desired output size in (H, W) format
+        size (int, optional): Mask size. Defaults to 256.
+
+    Returns:
+        (np.ndarray): Upscaled mask
+    """
     if image_shape[1] > image_shape[0]:
         lim_x = size
         lim_y = int(size * image_shape[0] / image_shape[1])
@@ -119,33 +90,32 @@ def upscale_mask(mask, image_shape, size=256):
         lim_x = int(size * image_shape[1] / image_shape[0])
         lim_y = size
 
-    mask = F.interpolate(mask[:, :, :lim_y, :lim_x], image_shape, mode="bilinear")
+    bs = mask.shape[0]
+    mask = np.transpose(mask[:, :, :lim_y, :lim_x], (2, 3, 0, 1)).reshape(lim_y, lim_x, -1)
+    mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_LINEAR)
+    mask = mask.reshape(*image_shape, bs, -1)
+    mask = np.transpose(mask, (2, 3, 0, 1))
 
     return mask
 
 
 class Predictor(object):
-    def __init__(
-        self,
-        image_encoder_engine: str,
-        mask_decoder_engine: str,
-        image_encoder_size: int = 1024,
-    ):
-        self.image_encoder_engine = load_image_encoder_engine(image_encoder_engine)
-        self.mask_decoder_engine = load_mask_decoder_engine(mask_decoder_engine)
-        self.image_encoder_size = image_encoder_size
+    def __init__(self, image_encoder_path: str, mask_decoder_path: str, provider: str = "cpu"):
+        self.image_encoder = OnnxModel(image_encoder_path, provider=provider)
+        self.mask_decoder = OnnxModel(mask_decoder_path, provider=provider)
+        self.image_encoder_size = self.image_encoder.get_inputs()[0].shape[-1]
 
     def set_image(self, image):
         self.image = image
         self.image_tensor = preprocess_image(image, self.image_encoder_size)
-        self.features = self.image_encoder_engine(self.image_tensor)
+        self.features = self.image_encoder(self.image_tensor)[0]
 
     def predict(self, points, point_labels, mask_input=None):
         points = preprocess_points(
-            points, (self.image.height, self.image.width), self.image_encoder_size
+            points, (self.image.height, self.image.width)
         )
         mask_iou, low_res_mask = run_mask_decoder(
-            self.mask_decoder_engine, self.features, points, point_labels, mask_input
+            self.mask_decoder, self.features, points, point_labels, mask_input
         )
 
         hi_res_mask = upscale_mask(low_res_mask, (self.image.height, self.image.width))
