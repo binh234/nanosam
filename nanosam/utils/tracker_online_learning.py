@@ -13,14 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import torch
-import torch.nn.functional as F
-from .predictor import Predictor, upscale_mask
 import numpy as np
-import PIL.Image
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.ops import sigmoid_focal_loss
+
+from .predictor import Predictor, upscale_mask
 
 
 def bbox2points(box):
@@ -37,7 +36,6 @@ def up_to_256(x):
 
 def mask_to_box(mask):
     mask = mask[0, 0] > 0
-    mask = mask.detach().cpu().numpy()
     mask_pts = np.argwhere(mask)
     min_y = np.min(mask_pts[:, 0])
     min_x = np.min(mask_pts[:, 1])
@@ -49,7 +47,6 @@ def mask_to_box(mask):
 
 def mask_to_centroid(mask):
     mask = mask[0, 0] > 0
-    mask = mask.detach().cpu().numpy()
     mask_pts = np.argwhere(mask)
     center_y = np.median(mask_pts[:, 0])
     center_x = np.median(mask_pts[:, 1])
@@ -59,7 +56,7 @@ def mask_to_centroid(mask):
 @torch.no_grad()
 def mask_to_centroid_soft(mask):
     mask = mask[0, 0]
-    # mask = mask.detach().cpu().numpy()
+    mask = torch.from_numpy(mask)
     weight = torch.sigmoid(mask)
     i, j = torch.meshgrid(torch.arange(mask.shape[0]), torch.arange(mask.shape[1]))
     ij = torch.stack([i, j]).cuda()
@@ -75,7 +72,6 @@ def mask_to_centroid_soft(mask):
 
 def mask_to_sample_points(mask):
     mask = mask[0, 0] > 0
-    mask = mask.detach().cpu().numpy()
     fg_mask_pts = np.argwhere(mask)
     fg_mask_pts_selected = np.random.choice(len(fg_mask_pts), 1)
     bg_mask_pts = np.argwhere(mask == False)

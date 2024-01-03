@@ -17,8 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import PIL.Image
 import argparse
-from nanosam.utils.onnx_model import PROVIDERS_DICT
-from nanosam.utils.predictor import Predictor
+from nanosam.utils import PROVIDERS_DICT, Predictor, get_provider_options
 
 
 if __name__ == "__main__":
@@ -28,16 +27,26 @@ if __name__ == "__main__":
     parser.add_argument(
         "--provider",
         type=str,
-        default="cuda",
+        default="cpu",
         choices=PROVIDERS_DICT.keys(),
+    )
+    parser.add_argument(
+        "-opt",
+        "--provider_options",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Provider options for model to run"
     )
     args = parser.parse_args()
 
     # Instantiate TensorRT predictor
-    predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider)
+    provider_options = get_provider_options(args.provider_options)
+    predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider, provider_options)
 
     # Read image and run image encoder
-    image = PIL.Image.open("assets/dogs.jpg")
+    # image = PIL.Image.open("assets/dogs.jpg")
+    image = PIL.Image.open("app/assets/picture3.jpg")
     predictor.set_image(image)
 
     # Segment using bounding box

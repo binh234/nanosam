@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any
 import cv2
 import numpy as np
 import PIL.Image
@@ -44,6 +45,7 @@ def preprocess_image(image, size: int = 512):
     image_tensor[0, :, :resize_height, :resize_width] = image_np_resized_normalized
 
     return image_tensor
+
 
 def preprocess_points(points, image_size, size: int = 1024):
     scale = size / max(*image_size)
@@ -100,9 +102,19 @@ def upscale_mask(mask, image_shape, size=256):
 
 
 class Predictor(object):
-    def __init__(self, image_encoder_path: str, mask_decoder_path: str, provider: str = "cpu"):
-        self.image_encoder = OnnxModel(image_encoder_path, provider=provider)
-        self.mask_decoder = OnnxModel(mask_decoder_path, provider=provider)
+    def __init__(
+        self,
+        image_encoder_path: str,
+        mask_decoder_path: str,
+        provider: str = "cpu",
+        provider_options: Any = None,
+    ):
+        self.image_encoder = OnnxModel(
+            image_encoder_path, provider=provider, provider_options=provider_options
+        )
+        self.mask_decoder = OnnxModel(
+            mask_decoder_path, provider=provider, provider_options=provider_options
+        )
         self.image_encoder_size = self.image_encoder.get_inputs()[0].shape[-1]
 
     def set_image(self, image):
@@ -111,9 +123,7 @@ class Predictor(object):
         self.features = self.image_encoder(self.image_tensor)[0]
 
     def predict(self, points, point_labels, mask_input=None):
-        points = preprocess_points(
-            points, (self.image.height, self.image.width)
-        )
+        points = preprocess_points(points, (self.image.height, self.image.width))
         mask_iou, low_res_mask = run_mask_decoder(
             self.mask_decoder, self.features, points, point_labels, mask_input
         )

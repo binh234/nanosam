@@ -17,17 +17,11 @@ import numpy as np
 import PIL.Image
 import argparse
 import time
-from nanosam.utils.onnx_model import PROVIDERS_DICT
-from nanosam.utils.predictor import Predictor
+from nanosam.utils import PROVIDERS_DICT, Predictor, get_provider_options
 
 
 def benchmark_encoder(
-    model,
-    input_shape=(1024, 1024, 3),
-    nwarmup=50,
-    nruns=1000,
-    log_steps=50,
-    input_data=None
+    model, input_shape=(1024, 1024, 3), nwarmup=50, nruns=1000, log_steps=50, input_data=None
 ):
     if not input_data:
         input_data = np.random.randint(0, 255, input_shape).transpose(1, 2, 0)
@@ -43,15 +37,12 @@ def benchmark_encoder(
         end_time = time.perf_counter()
         timings.append(end_time - start_time)
         if i % log_steps == 0:
-            print(
-                "Iteration %d/%d, avg batch time %.2f ms"
-                % (i, nruns, np.mean(timings) * 1000)
-            )
+            print("Iteration %d/%d, avg batch time %.2f ms" % (i, nruns, np.mean(timings) * 1000))
 
     throughput = 1 / np.mean(timings)
-    print("Input shape:", input_shape)
-    print("Average throughput: %.2f images/second" % (throughput))
+    print("Average FPS: %.2f images/second" % (throughput))
     return throughput
+
 
 def benchmark_decoder(
     model,
@@ -61,7 +52,7 @@ def benchmark_decoder(
     nwarmup=50,
     nruns=1000,
     log_steps=50,
-    input_data=None
+    input_data=None,
 ):
     if not input_data:
         input_data = np.random.randint(0, 255, input_shape).transpose(1, 2, 0)
@@ -78,14 +69,10 @@ def benchmark_decoder(
         end_time = time.perf_counter()
         timings.append(end_time - start_time)
         if i % log_steps == 0:
-            print(
-                "Iteration %d/%d, avg batch time %.2f ms"
-                % (i, nruns, np.mean(timings) * 1000)
-            )
+            print("Iteration %d/%d, avg batch time %.2f ms" % (i, nruns, np.mean(timings) * 1000))
 
     throughput = 1 / np.mean(timings)
-    print("Input shape:", input_shape)
-    print("Average throughput: %.2f images/second" % (throughput))
+    print("Average FPS: %.2f images/second" % (throughput))
     return throughput
 
 
@@ -96,13 +83,24 @@ if __name__ == "__main__":
     parser.add_argument(
         "--provider",
         type=str,
-        default="cuda",
+        default="cpu",
         choices=PROVIDERS_DICT.keys(),
     )
+    parser.add_argument(
+        "-opt",
+        "--provider_options",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Provider options for model to run"
+    )
+    parser.add_argument("--num_warmup", type=int, default=50)
+    parser.add_argument("--num_run", type=int, default=500)
     args = parser.parse_args()
 
     # Instantiate TensorRT predictor
-    predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider)
+    provider_options = get_provider_options(args.provider_options)
+    predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider, provider_options)
 
     # Read image and run image encoder
     image = PIL.Image.open("assets/dogs.jpg")
@@ -115,7 +113,14 @@ if __name__ == "__main__":
     point_labels = np.array([2, 3])
 
     print(f"Benchmarking encoder {args.image_encoder} ...")
-    benchmark_encoder(predictor, input_data=image)
+    benchmark_encoder(predictor, nruns=args.num_run, nwarmup=args.num_warmup, input_data=image)
     print("-" * 80)
     print(f"Benchmarking decoder {args.mask_decoder} ...")
-    benchmark_decoder(predictor, points, point_labels, input_data=image)
+    benchmark_decoder(
+        predictor,
+        points,
+        point_labels,
+        nruns=args.num_run,
+        nwarmup=args.num_warmup,
+        input_data=image,
+    )

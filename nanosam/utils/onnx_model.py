@@ -1,7 +1,7 @@
 import platform
 from typing import Any
 
-import onnxruntime
+import onnxruntime as ort
 
 PROVIDERS_DICT = {
     "cpu": "CPUExecutionProvider",
@@ -21,10 +21,7 @@ class OnnxModel:
         if type(provider) in [tuple, list]:
             provider, provider_options = provider
         provider = provider.lower()
-        provider_name = PROVIDERS_DICT.get(provider, None)
-        assert (
-            provider_name
-        ), f"{provider} is not a supported providers. Available providers are {list(PROVIDERS_DICT.keys())}"
+        provider_name = PROVIDERS_DICT.get(provider, provider)
 
         if platform.system() == "Windows" and provider_name == "OpenVINOExecutionProvider":
             # noqa
@@ -32,11 +29,13 @@ class OnnxModel:
 
             utils.add_openvino_libs_to_path()
 
-            if provider != "openvino" and provider_options is None:
+            if provider in ["cpu_fp32", "gpu_fp32", "gpu_fp16"] and provider_options is None:
                 provider_options = {"device_type": provider.upper()}
 
-        self.session = onnxruntime.InferenceSession(
-            path, providers=[provider_name], provider_options=[provider_options], **kwargs
+        if isinstance(provider_options, dict):
+            provider_options = [provider_options]
+        self.session = ort.InferenceSession(
+            path, providers=[provider_name], provider_options=provider_options, **kwargs
         )
         self.input_dict = {}
         self.input_names = []
