@@ -13,7 +13,73 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from setuptools import find_packages, setup
 
-setup(name="nanosam", version="0.0", install_requires=[], packages=find_packages())
+install_requires = [
+    "numpy",
+    "onnxruntime",
+    "pillow",
+    "tqdm",
+]
+
+extras_require = {
+    "dev": [
+        "black",
+        "flake8",
+        "imagehash",
+        "isort",
+        "opencv-python",
+        "pytest",
+        "setuptools",
+        "torch",
+        "torchvision",
+        "twine",
+        "wheel",
+    ],
+    "gpu": ["onnxruntime-gpu"],
+    "cpu": ["onnxruntime-openvino"],
+}
+
+
+setup(
+    name="nanosam",
+    packages=find_packages(),
+    include_package_data=True,
+    version="0.0.0",
+    install_requires=install_requires,
+    extras_require=extras_require,
+    license="Apache License 2.0",
+    description="NanoSAM is a Segment Anything (SAM) model variant that is capable of running in real-time",
+    url="https://github.com/binh234/nanosam",
+    download_url="https://github.com/binh234/nanosam.git",
+    author="Binh Le",
+    author_email="binhnd234@gmail.com",
+    keywords=[
+        "image-classification",
+        "image-recognition",
+        "pretrained-models",
+        "knowledge-distillation",
+        "product-recognition",
+        "autoaugment",
+        "cutmix",
+        "randaugment",
+        "gridmask",
+        "deit",
+        "repvgg",
+        "swin-transformer",
+        "image-retrieval-system",
+    ],
+    classifiers=[
+        "Operating System :: OS Independent",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Education",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+    ],
+    python_requires=">=3.8, <3.12",
+)
