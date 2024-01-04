@@ -8,7 +8,7 @@ PROVIDERS_DICT = {
     "gpu": "CUDAExecutionProvider",
     "cuda": "CUDAExecutionProvider",
     "coreml": "CoreMLExecutionProvider",
-    "tensorrt": "TensorRTExecutionProvider",
+    "tensorrt": "TensorrtExecutionProvider",
     "openvino": "OpenVINOExecutionProvider",
     "cpu_fp32": "OpenVINOExecutionProvider",
     "gpu_fp32": "OpenVINOExecutionProvider",
