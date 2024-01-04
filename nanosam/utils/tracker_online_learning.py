@@ -16,41 +16,10 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torchvision.ops import sigmoid_focal_loss
 
 from .predictor import Predictor, upscale_mask
-
-
-def bbox2points(box):
-    return np.array([[box[0], box[1]], [box[2], box[3]]]), np.array([2, 3])
-
-
-def down_to_64(x):
-    return F.interpolate(x, (64, 64), mode="area")
-
-
-def up_to_256(x):
-    return F.interpolate(x, (256, 256), mode="bilinear")
-
-
-def mask_to_box(mask):
-    mask = mask[0, 0] > 0
-    mask_pts = np.argwhere(mask)
-    min_y = np.min(mask_pts[:, 0])
-    min_x = np.min(mask_pts[:, 1])
-    max_y = np.max(mask_pts[:, 0])
-    max_x = np.max(mask_pts[:, 1])
-    next_box = np.array([min_x, min_y, max_x, max_y])
-    return next_box
-
-
-def mask_to_centroid(mask):
-    mask = mask[0, 0] > 0
-    mask_pts = np.argwhere(mask)
-    center_y = np.median(mask_pts[:, 0])
-    center_x = np.median(mask_pts[:, 1])
-    return np.array([center_x, center_y])
+from .tracker import bbox2points, resize_mask, mask_to_box
 
 
 @torch.no_grad()
@@ -70,15 +39,6 @@ def mask_to_centroid_soft(mask):
     return np.array([center_x, center_y])
 
 
-def mask_to_sample_points(mask):
-    mask = mask[0, 0] > 0
-    fg_mask_pts = np.argwhere(mask)
-    fg_mask_pts_selected = np.random.choice(len(fg_mask_pts), 1)
-    bg_mask_pts = np.argwhere(mask == False)
-    bg_mask_pts_selected = np.random.choice(len(bg_mask_pts), 1)
-    return fg_mask_pts[fg_mask_pts_selected], bg_mask_pts[bg_mask_pts_selected]
-
-
 class SelfAtt(nn.Module):
     def __init__(self, a, b):
         super().__init__()
@@ -87,6 +47,31 @@ class SelfAtt(nn.Module):
 
     def forward(self, x):
         return torch.sum(self.layer(x) * self.feat(x), dim=1, keepdim=True)
+
+
+class ObjectModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.dummy_param = nn.Parameter(torch.empty(0))
+        self.model = nn.Sequential(
+            nn.ConvTranspose2d(256, 8, 3, 2, 1, 1),
+            nn.GELU(),
+            nn.ConvTranspose2d(8, 8, 3, 2, 1, 1),
+            nn.GELU(),
+            nn.Conv2d(8, 8, 3, 1, 1),
+            nn.GELU(),
+            nn.Conv2d(8, 1, 1)
+            # nn.Conv2d(256, 16, 1),
+            # nn.GELU(),
+            # nn.Conv2d(16, 1, 1),
+            # nn.UpsamplingBilinear2d(scale_factor=4)
+        )
+
+    def forward(self, x):
+        if isinstance(x, np.ndarray):
+            device = self.dummy_param.device
+            x = torch.from_numpy(x).to(device)
+        return self.model(x)
 
 
 class TrackerOnline(object):
@@ -113,7 +98,7 @@ class TrackerOnline(object):
         idx = int(iou_pred.argmax())
         mask_raw = mask_raw[:, idx : idx + 1, :, :]
         mask_high = mask_high[:, idx : idx + 1, :, :]
-        return mask_high, mask_raw, down_to_64(mask_raw)
+        return mask_high, mask_raw, resize_mask(mask_raw, (64, 64))
 
     def fit_token(self, features, mask_low):
         """
@@ -121,19 +106,18 @@ class TrackerOnline(object):
         resolution masks.
 
         Args:
-            features (Nx256x64x64)
+            features (Nx256x64x64) (np.ndarray):
             mask (Nx1x64x64) - Should be logits type
         """
-        with torch.no_grad():
-            N = features.shape[0]
-            assert N == mask_low.shape[0]
-            A = features.permute(0, 2, 3, 1).reshape(N * 64 * 64, 256)
-            B = mask_low.permute(0, 2, 3, 1).reshape(N * 64 * 64, 1)
-            X = torch.linalg.lstsq(A, B).solution.reshape(1, 256, 1, 1)
-        return X.detach()
+        N = features.shape[0]
+        assert N == mask_low.shape[0]
+        A = np.transpose(features, (0, 2, 3, 1)).reshape(N * 64 * 64, 256)
+        B = np.transpose(mask_low, (0, 2, 3, 1)).reshape(N * 64 * 64, 1)
+        X = np.linalg.lstsq(A, B, rcond=None)[0].reshape(1, 256, 1, 1)
+        return X
 
     def apply_token(self, features, token):
-        return up_to_256(torch.sum(features * token, dim=(1), keepdim=True))
+        return resize_mask(np.sum(features * token, axis=1, keepdims=True), (256, 256))
 
     def init(self, image, point=None, box=None):
         with torch.no_grad():
@@ -145,19 +129,7 @@ class TrackerOnline(object):
             if box is not None:
                 mask_high, mask_raw, mask_low = self.predict_mask(*bbox2points(box))
 
-        self.object_model = nn.Sequential(
-            nn.ConvTranspose2d(256, 8, 3, 2, 1, 1),
-            nn.GELU(),
-            nn.ConvTranspose2d(8, 8, 3, 2, 1, 1),
-            nn.GELU(),
-            nn.Conv2d(8, 8, 3, 1, 1),
-            nn.GELU(),
-            nn.Conv2d(8, 1, 1)
-            # nn.Conv2d(256, 16, 1),
-            # nn.GELU(),
-            # nn.Conv2d(16, 1, 1),
-            # nn.UpsamplingBilinear2d(scale_factor=4)
-        ).cuda()
+        self.object_model = ObjectModel().cuda()
 
         # self.optimizer = torch.optim.LBFGS(self.object_model.parameters(), history_size=1, max_iter=20, lr=1)
         self.optimizer = torch.optim.Adam(self.object_model.parameters(), lr=1e-3)
@@ -170,8 +142,8 @@ class TrackerOnline(object):
         xf, yf = self._first
         x = self.predictor.features  # torch.cat(self._features, dim=0)
         y = target  # torch.cat(self._targets, dim=0)
-        x = torch.cat([xf, x], dim=0)
-        y = torch.cat([yf, y], dim=0)
+        x = torch.from_numpy(np.concatenate([xf, x], axis=0))
+        y = torch.from_numpy(np.concatenate([yf, y], axis=0))
         # def closure():
         #     self.optimizer.zero_grad()
         #     output = self.object_model(x)
@@ -196,34 +168,33 @@ class TrackerOnline(object):
         self.set_image(image)
 
         with torch.no_grad():
-            mask_token = self.object_model(self.predictor.features)
-            mask_token_up = upscale_mask(mask_token, (image.height, image.width))
+            mask_token = self.object_model(self.predictor.features).detach().cpu().numpy()
+        mask_token_up = upscale_mask(mask_token, (image.height, image.width))
 
-        if torch.count_nonzero(mask_token_up > 0) > 10:
-            with torch.no_grad():
-                box = mask_to_box(mask_token_up)
-                points_1, point_labels_1 = bbox2points(box)
-                if self._lb is not None:
-                    box = 0.5 * box + 0.5 * self._lb
-                self._lb = box
-                mask_high, mask_raw, mask_low = self.predict_mask(
-                    points_1, point_labels_1, mask_input=mask_token
-                )
-                # points = np.array([mask_to_centroid_soft(mask_token_up)])
-                # point_labels = np.array([1])
-                # mask_high, mask_raw, mask_low = self.predict_mask(points, point_labels, mask_input=mask_raw)
+        if np.count_nonzero(mask_token_up > 0) > 10:
+            box = mask_to_box(mask_token_up)
+            points_1, point_labels_1 = bbox2points(box)
+            if self._lb is not None:
+                box = 0.5 * box + 0.5 * self._lb
+            self._lb = box
+            mask_high, mask_raw, mask_low = self.predict_mask(
+                points_1, point_labels_1, mask_input=mask_token
+            )
+            # points = np.array([mask_to_centroid_soft(mask_token_up)])
+            # point_labels = np.array([1])
+            # mask_high, mask_raw, mask_low = self.predict_mask(points, point_labels, mask_input=mask_raw)
 
             a = mask_token > 0
             b = mask_raw > 0
-            inter = torch.count_nonzero(a & b)
-            union = torch.count_nonzero(a | b)
+            inter = np.count_nonzero(a & b)
+            union = np.count_nonzero(a | b)
             iou = float(inter) / (1e-3 + float(union))
 
             if iou > 0.5 and iou < 0.75:
                 self.fit_model(mask_raw, 20)
 
             with torch.no_grad():
-                mask_token = self.object_model(self.predictor.features)
-                mask_token_up = upscale_mask(mask_token, (image.height, image.width))
+                mask_token = self.object_model(self.predictor.features).detach().cpu().numpy()
+            mask_token_up = upscale_mask(mask_token, (image.height, image.width))
 
         return mask_token_up
