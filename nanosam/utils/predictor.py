@@ -74,7 +74,7 @@ def run_mask_decoder(mask_decoder, features, points=None, point_labels=None, mas
     return iou_predictions, low_res_masks
 
 
-def upscale_mask(mask, image_shape, size=256):
+def upscale_mask(mask, image_shape, size=256, interpolation=cv2.INTER_LINEAR):
     """_summary_
 
     Args:
@@ -94,7 +94,7 @@ def upscale_mask(mask, image_shape, size=256):
 
     bs = mask.shape[0]
     mask = np.transpose(mask[:, :, :lim_y, :lim_x], (2, 3, 0, 1)).reshape(lim_y, lim_x, -1)
-    mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_LINEAR)
+    mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=interpolation)
     mask = mask.reshape(*image_shape, bs, -1)
     mask = np.transpose(mask, (2, 3, 0, 1))
 

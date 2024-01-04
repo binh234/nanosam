@@ -92,7 +92,7 @@ if __name__ == "__main__":
         type=str,
         nargs="+",
         default=None,
-        help="Provider options for model to run"
+        help="Provider options for model to run",
     )
     parser.add_argument("--num_warmup", type=int, default=50)
     parser.add_argument("--num_run", type=int, default=500)

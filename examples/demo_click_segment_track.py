@@ -17,9 +17,7 @@ import PIL.Image
 import cv2
 import numpy as np
 import argparse
-from nanosam.utils.onnx_model import PROVIDERS_DICT
-from nanosam.utils.predictor import Predictor
-from nanosam.utils.tracker import Tracker
+from nanosam.utils import PROVIDERS_DICT, Predictor, Tracker, get_provider_options
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--image_encoder", type=str, default="data/resnet18_image_encoder.onnx")
@@ -30,6 +28,14 @@ parser.add_argument(
     default="cuda",
     choices=PROVIDERS_DICT.keys(),
 )
+parser.add_argument(
+    "-opt",
+    "--provider_options",
+    type=str,
+    nargs="+",
+    default=None,
+    help="Provider options for model to run",
+)
 args = parser.parse_args()
 
 
@@ -38,7 +44,8 @@ def cv2_to_pil(image):
     return PIL.Image.fromarray(image)
 
 
-predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider)
+provider_options = get_provider_options(args.provider_options)
+predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider, provider_options)
 
 tracker = Tracker(predictor)
 
@@ -51,6 +58,7 @@ cap = cv2.VideoCapture(0)
 def init_track(event, x, y, flags, param):
     global mask, point
     if event == cv2.EVENT_LBUTTONDBLCLK:
+        print("Init track...")
         mask = tracker.init(image_pil, point=(x, y))
         point = (x, y)
 
@@ -91,7 +99,6 @@ while True:
     elif ret == ord("r"):
         tracker.reset()
         mask = None
-        box = None
-
+        point = None
 
 cv2.destroyAllWindows()

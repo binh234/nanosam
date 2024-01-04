@@ -16,3 +16,4 @@
 from .config import get_provider_options
 from .onnx_model import PROVIDERS_DICT
 from .predictor import Predictor, upscale_mask
+from .tracker import Tracker

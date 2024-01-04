@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import cv2
 import numpy as np
-import torch
-import torch.nn.functional as F
 
 from .predictor import Predictor, upscale_mask
 
@@ -24,12 +23,25 @@ def bbox2points(box):
     return np.array([[box[0], box[1]], [box[2], box[3]]]), np.array([2, 3])
 
 
-def down_to_64(x):
-    return F.interpolate(x, (64, 64), mode="area")
+def resize_mask(mask, image_shape=(64, 64), interpolation=cv2.INTER_AREA):
+    """_summary_
 
+    Args:
+        mask (np.ndarray): Input mask
+        image_shape (Union[int, Tuple[int, int]]): Desired output size in (H, W) format
+        interpolation (int, optional): Interpolation method. Defaults to cv2.INTER_AREA.
 
-def up_to_256(x):
-    return F.interpolate(x, (256, 256), mode="bilinear")
+    Returns:
+        (np.ndarray): Resized mask
+    """
+
+    bs, _, h, w = mask.shape
+    mask = np.transpose(mask, (2, 3, 0, 1)).reshape(h, w, -1)
+    mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=interpolation)
+    mask = mask.reshape(*image_shape, bs, -1)
+    mask = np.transpose(mask, (2, 3, 0, 1))
+
+    return mask
 
 
 def mask_to_box(mask):
@@ -82,7 +94,7 @@ class Tracker(object):
         idx = int(iou_pred.argmax())
         mask_raw = mask_raw[:, idx : idx + 1, :, :]
         mask_high = mask_high[:, idx : idx + 1, :, :]
-        return mask_high, mask_raw, down_to_64(mask_raw)
+        return mask_high, mask_raw, resize_mask(mask_raw, (64, 64))
 
     def fit_token(self, features, mask_low):
         """
@@ -90,21 +102,19 @@ class Tracker(object):
         resolution masks.
 
         Args:
-            features (Nx256x64x64)
+            features (Nx256x64x64) (np.ndarray):
             mask (Nx1x64x64) - Should be logits type
         """
-        with torch.no_grad():
-            N = features.shape[0]
-            assert N == mask_low.shape[0]
-            A = features.permute(0, 2, 3, 1).reshape(N * 64 * 64, 256)
-            B = mask_low.permute(0, 2, 3, 1).reshape(N * 64 * 64, 1)
-            X = torch.linalg.lstsq(A, B).solution.reshape(1, 256, 1, 1)
-        return X.detach()
+        N = features.shape[0]
+        assert N == mask_low.shape[0]
+        A = np.transpose(features, (0, 2, 3, 1)).reshape(N * 64 * 64, 256)
+        B = np.transpose(mask_low, (0, 2, 3, 1)).reshape(N * 64 * 64, 1)
+        X = np.linalg.lstsq(A, B, rcond=None)[0].reshape(1, 256, 1, 1)
+        return X
 
     def apply_token(self, features, token):
-        return up_to_256(torch.sum(features * token, dim=(1), keepdim=True))
+        return resize_mask(np.sum(features * token, axis=1, keepdims=True), (256, 256))
 
-    @torch.no_grad()
     def init(self, image, point=None, box=None):
         self.set_image(image)
 
@@ -121,12 +131,11 @@ class Tracker(object):
         self._targets = []
         self.token = None
 
-    @torch.no_grad()
     def update(self, image):
         self.set_image(image)
         mask_token = self.apply_token(self.predictor.features, self.token)
         mask_token_up = upscale_mask(mask_token, (image.height, image.width))
-        if torch.count_nonzero(mask_token_up > 0.0) > 1:
+        if np.count_nonzero(mask_token_up > 0.0) > 1:
             # fg_points, bg_points = mask_to_sample_points(mask_token_up)
             # points = np.concatenate([fg_points, bg_points], axis=0)
             # point_labels = np.concatenate([np.ones((len(fg_points),), dtype=np.int64), np.zeros((len(bg_points),), dtype=np.int64)], axis=0)
@@ -139,8 +148,8 @@ class Tracker(object):
 
             a = mask_token > 0
             b = mask_raw > 0
-            inter = torch.count_nonzero(a & b)
-            union = torch.count_nonzero(a | b)
+            inter = np.count_nonzero(a & b)
+            union = np.count_nonzero(a | b)
             iou = float(inter) / (1e-3 + float(union))
 
             if iou > 0.1:

@@ -69,7 +69,7 @@ if __name__ == "__main__":
     predictor = Predictor(
         image_encoder_engine=args.image_encoder,
         mask_decoder_engine=args.mask_decoder,
-        provider="cuda"
+        provider="cuda",
     )
 
     results = []

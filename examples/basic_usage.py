@@ -36,7 +36,7 @@ if __name__ == "__main__":
         type=str,
         nargs="+",
         default=None,
-        help="Provider options for model to run"
+        help="Provider options for model to run",
     )
     args = parser.parse_args()
 
