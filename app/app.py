@@ -74,7 +74,7 @@ def segment_with_points(
     points = np.array(global_points)
     point_labels = np.array(global_point_labels)
     if len(points) == 0 and len(point_labels) == 0:
-        return gr.Error("No points selected")
+        raise gr.Error("No points selected")
 
     img_w, img_h = image.size
     start = time.perf_counter()
