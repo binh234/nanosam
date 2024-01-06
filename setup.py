@@ -17,9 +17,9 @@ from setuptools import find_packages, setup
 
 install_requires = [
     "numpy",
-    "onnxruntime",
     "pillow",
     "tqdm",
+    "onnx",
 ]
 
 extras_require = {
@@ -35,6 +35,7 @@ extras_require = {
         "torchvision",
         "twine",
         "wheel",
+        "onnxruntime",
     ],
     "gpu": ["onnxruntime-gpu"],
     "cpu": ["onnxruntime-openvino"],
