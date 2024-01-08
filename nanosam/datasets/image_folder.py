@@ -20,10 +20,10 @@ import os
 from torchvision.transforms import Compose, ToTensor, Normalize, RandomResizedCrop
 
 
-def default_transform():
+def default_transform(img_size=1024):
     transform = Compose(
         [
-            RandomResizedCrop((1024, 1024)),
+            RandomResizedCrop((img_size, img_size)),
             ToTensor(),
             Normalize(
                 mean=[123.675 / 255, 116.28 / 255, 103.53 / 255],
@@ -35,14 +35,14 @@ def default_transform():
 
 
 class ImageFolder:
-    def __init__(self, root: str, transform=None):
+    def __init__(self, root: str, transform=None, img_size=1024):
         self.root = root
         image_paths = glob.glob(os.path.join(root, "*.jpg"))
         image_paths += glob.glob(os.path.join(root, "*.png"))
         self.image_paths = image_paths
 
         if transform is None:
-            transform = default_transform()
+            transform = default_transform(img_size)
 
         self.transform = transform
 
