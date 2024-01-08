@@ -57,6 +57,12 @@ if __name__ == "__main__":
         help="The NanoSAM model name.",
     )
     parser.add_argument(
+        "--teacher_size",
+        type=int,
+        default=1024,
+        help="The size of image to feed to the teacher during distillation.",
+    )
+    parser.add_argument(
         "--student_size",
         type=int,
         default=1024,
@@ -110,7 +116,7 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(image_encoder_cnn.parameters(), lr=args.learning_rate)
 
-    dataset = ImageFolder(args.images)
+    dataset = ImageFolder(args.images, img_size=args.teacher_size)
 
     if args.num_images is not None:
         dataset, _ = random_split(dataset, [args.num_images, len(dataset) - args.num_images])
@@ -137,12 +143,14 @@ if __name__ == "__main__":
             image = image.cuda()
             if len(image) != args.batch_size:
                 continue
-            image_cnn = F.interpolate(image, (args.student_size, args.student_size), mode="area")
+            
             with torch.no_grad():
                 features = image_encoder_trt(image)
+            if args.teacher_size != args.student_size:
+                image = F.interpolate(image, (args.student_size, args.student_size), mode="area")
 
             optimizer.zero_grad()
-            output = image_encoder_cnn(image_cnn)
+            output = image_encoder_cnn(image)
 
             loss = loss_function(output, features)
 
