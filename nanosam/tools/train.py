@@ -24,7 +24,7 @@ from nanosam.models import create_model, list_models
 import argparse
 import os
 import tensorrt as trt
-import tqdm
+from tqdm import tqdm
 from torch2trt import TRTModule
 
 
