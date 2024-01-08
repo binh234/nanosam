@@ -13,16 +13,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tqdm
-import torch
-import argparse
-from nanosam.utils.predictor import load_image_encoder_engine
-from nanosam.models import create_model, list_models
-from nanosam.datasets.image_folder import ImageFolder
-import os
 import matplotlib.pyplot as plt
+import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, random_split
+
+from nanosam.datasets.image_folder import ImageFolder
+from nanosam.models import create_model, list_models
+
+import argparse
+import os
+import tensorrt as trt
+import tqdm
+from torch2trt import TRTModule
+
+
+def load_image_encoder_engine(path: str):
+    with trt.Logger() as logger, trt.Runtime(logger) as runtime:
+        with open(path, "rb") as f:
+            engine_bytes = f.read()
+        engine = runtime.deserialize_cuda_engine(engine_bytes)
+
+    image_encoder_trt = TRTModule(
+        engine=engine, input_names=["image"], output_names=["image_embeddings"]
+    )
+
+    return image_encoder_trt
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -66,6 +83,7 @@ if __name__ == "__main__":
         choices=["huber", "l1", "mse"],
         help="The loss function to use for distillation.",
     )
+    parser.add_argument("--log_step", type=int, default=20, help="The logging step.")
     parser.add_argument(
         "--teacher_image_encoder_engine",
         type=str,
@@ -114,7 +132,8 @@ if __name__ == "__main__":
     for epoch in range(start_epoch, args.num_epochs):
         epoch_loss = 0.0
 
-        for image in tqdm.tqdm(iter(loader)):
+        prog_bar = tqdm(enumerate(loader), total=len(loader), desc=f"Epoch {epoch + 1}")
+        for cnt, image in prog_bar:
             image = image.cuda()
             if len(image) != args.batch_size:
                 continue
@@ -130,9 +149,12 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
             epoch_loss += float(loss)
+        
+            if (cnt + 1) % args.log_step == 0:
+                prog_bar.set_postfix_str(f"loss: {epoch_loss / (cnt + 1):.5f}")
 
         epoch_loss /= len(loader)
-        print(f"{epoch} - {epoch_loss}")
+        print(f"{epoch} - {epoch_loss: .5f}")
 
         with open(os.path.join(args.output_dir, "log.txt"), "a") as f:
             f.write(f"{epoch} - {epoch_loss}\n")
@@ -148,8 +170,8 @@ if __name__ == "__main__":
 
         plt.figure(figsize=(10, 10))
         plt.subplot(121)
-        plt.imshow(features[0, 0].detach().cpu())
+        plt.imshow(features[0, 0].detach().cpu().numpy())
         plt.subplot(122)
-        plt.imshow(output[0, 0].detach().cpu())
+        plt.imshow(output[0, 0].detach().cpu().numpy())
         plt.savefig(os.path.join(args.output_dir, f"epoch_{epoch}.png"))
         plt.close()
