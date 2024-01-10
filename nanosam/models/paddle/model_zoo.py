@@ -1,10 +1,10 @@
+import copy
 import math
-from .backbone.pp_lcnet_v2 import (
-    PPLCNetV2Backbone_small,
-    PPLCNetV2Backbone_base,
-    PPLCNetV2Backbone_large,
-)
-from .backbone.pp_hgnet import PPHGNetBackbone_tiny, PPHGNetBackbone_small
+import paddle
+import paddle.nn as nn
+from typing import Dict, Union
+
+from .backbone.pp_hgnet import PPHGNetBackbone_small, PPHGNetBackbone_tiny
 from .backbone.pp_hgnet_v2 import (
     PPHGNetV2Backbone_B0,
     PPHGNetV2Backbone_B1,
@@ -14,8 +14,40 @@ from .backbone.pp_hgnet_v2 import (
     PPHGNetV2Backbone_B5,
     PPHGNetV2Backbone_B6,
 )
-from .image_encoder import PaddleImageEncoder
+from .backbone.pp_lcnet_v2 import (
+    PPLCNetV2Backbone_base,
+    PPLCNetV2Backbone_large,
+    PPLCNetV2Backbone_small,
+)
 from .neck import ConvNeck, SamNeck
+
+
+def build_model(config):
+    arch_config = copy.deepcopy(config)
+    model_type = arch_config.pop("name")
+    model = eval(model_type)(**arch_config)
+    return model
+
+
+class ImageEncoder(nn.Layer):
+    def __init__(
+        self,
+        backbone: Union[Dict, nn.Layer],
+        neck: Union[Dict, nn.Layer],
+        return_dict: bool = False,
+    ) -> None:
+        super().__init__()
+        self.backbone = backbone if isinstance(backbone, nn.Layer) else build_model(backbone)
+        self.neck = neck if isinstance(neck, nn.Layer) else build_model(neck)
+        self.return_dict = return_dict
+
+    def forward(self, x: paddle.Tensor) -> paddle.Tensor:
+        feed_dict = self.backbone(x)
+        output = self.neck(feed_dict)
+
+        if not self.return_dict and isinstance(output, dict):
+            out = out["features"]
+        return output
 
 
 def Sam_PPHGNetV2_B0(**kwargs):
@@ -29,7 +61,7 @@ def Sam_PPHGNetV2_B0(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -44,7 +76,7 @@ def Sam_PPHGNetV2_B1(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -59,7 +91,7 @@ def Sam_PPHGNetV2_B2(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -74,7 +106,7 @@ def Sam_PPHGNetV2_B3(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -89,7 +121,7 @@ def Sam_PPHGNetV2_B4(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -104,7 +136,7 @@ def Sam_PPHGNetV2_B5(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -119,7 +151,7 @@ def Sam_PPHGNetV2_B6(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -134,7 +166,7 @@ def Sam_PPHGNet_tiny(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -149,7 +181,7 @@ def Sam_PPHGNet_small(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -164,7 +196,7 @@ def Sam_PPLCNetV2_small(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -179,7 +211,7 @@ def Sam_PPLCNetV2_base(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -194,7 +226,7 @@ def Sam_PPLCNetV2large(**kwargs):
         middle_op="fmbconv",
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -211,7 +243,7 @@ def Conv_PPHGNet_tiny(image_size=512, **kwargs):
         pos_embedding=True,
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -228,7 +260,7 @@ def Conv_PPHGNetV2_B1(image_size=512, **kwargs):
         pos_embedding=True,
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
 
 
@@ -245,6 +277,5 @@ def Conv_PPLCNetV2_base(image_size=512, **kwargs):
         pos_embedding=True,
     )
 
-    model = PaddleImageEncoder(backbone, neck)
+    model = ImageEncoder(backbone, neck)
     return model
-from .model_zoo import *
