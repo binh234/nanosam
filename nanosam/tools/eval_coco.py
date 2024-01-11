@@ -14,13 +14,17 @@
 # limitations under the License.
 
 
-import json
-from torchvision.datasets import CocoDetection
 import numpy as np
 import matplotlib.pyplot as plt
-import tqdm
+from pycocotools.coco import COCO
+
+from nanosam.utils import PROVIDERS_DICT, Predictor, get_provider_options
+
 import argparse
-from nanosam.utils.predictor import Predictor
+import json
+import os.path as osp
+from PIL import Image
+from tqdm import tqdm
 
 
 def predict_box(predictor, image, box, set_image=True):
@@ -30,9 +34,9 @@ def predict_box(predictor, image, box, set_image=True):
     points = np.array([[box[0], box[1]], [box[2], box[3]]])
     point_labels = np.array([2, 3])
 
-    mask, iou_preds, low_res_mask = predictor.predict(points=points, point_labels=point_labels)
+    mask, iou_preds, _ = predictor.predict(points=points, point_labels=point_labels)
 
-    mask = mask[0, iou_preds.argmax()].detach().cpu().numpy() > 0
+    mask = mask[0, iou_preds.argmax()] > 0
 
     return mask
 
@@ -55,27 +59,52 @@ def iou(mask_a, mask_b):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--coco_root", type=str, default="data/coco/val2017")
+    parser.add_argument("--data_root", default=None, help="dataset root")
+    parser.add_argument("--img_dir", default="data/coco/val2017", help="image folder path")
     parser.add_argument(
-        "--coco_ann", type=str, default="data/coco/annotations/instances_val2017.json"
+        "--ann_file", type=str, default="data/coco/annotations/instances_val2017.json"
     )
     parser.add_argument("--image_encoder", type=str, default="data/mobile_sam_image_encoder.onnx")
     parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.onnx")
     parser.add_argument("--output", type=str, default="data/mobile_sam_coco_results.json")
+    parser.add_argument(
+        "--provider",
+        type=str,
+        default="cpu",
+        choices=PROVIDERS_DICT.keys(),
+    )
+    parser.add_argument(
+        "-opt",
+        "--provider_options",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Provider options for model to run",
+    )
     args = parser.parse_args()
 
-    dataset = CocoDetection(root=args.coco_root, annFile=args.coco_ann)
+    if args.data_root is not None:
+        coco = COCO(osp.join(args.data_root, args.ann_file))
+    else:
+        coco = COCO(args.ann_file)
 
-    predictor = Predictor(
-        image_encoder_engine=args.image_encoder,
-        mask_decoder_engine=args.mask_decoder,
-        provider="cuda",
-    )
+    provider_options = get_provider_options(args.provider_options)
+    predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider, provider_options)
 
     results = []
+    image_ids = coco.getImgIds()
 
-    for i in tqdm.tqdm(range(len(dataset))):
-        image, anns = dataset[i]
+    for img_id in tqdm(image_ids):
+        image_data = coco.loadImgs(img_id)[0]
+        if args.data_root is not None:
+            image_path = osp.join(args.data_root, args.img_dir, image_data["file_name"])
+        else:
+            image_path = osp.join(args.img_dir, image_data["file_name"])
+
+        annotation_ids = coco.getAnnIds(imgIds=image_data["id"])
+        anns = coco.loadAnns(annotation_ids)
+
+        image = Image.open(image_path).convert("RGB")
 
         for j, ann in enumerate(anns):
             id = ann["id"]
@@ -84,7 +113,7 @@ if __name__ == "__main__":
             iscrowd = ann["iscrowd"]
             image_id = ann["image_id"]
             box = box_xywh_to_xyxy(ann["bbox"])
-            mask = dataset.coco.annToMask(ann)
+            mask = coco.annToMask(ann)
             mask_coco = mask > 0
             mask_sam = predict_box(predictor, image, box, set_image=(j == 0))
 
