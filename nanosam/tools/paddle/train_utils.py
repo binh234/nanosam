@@ -26,6 +26,7 @@ from ppcls.utils.misc import AverageMeter
 
 def train_epoch(engine, epoch_id, print_batch_step):
     tic = time.time()
+    student_size = engine.config["Global"].get("student_size", 512)
 
     if not hasattr(engine, "train_dataloader_iter"):
         engine.train_dataloader_iter = iter(engine.train_dataloader)
@@ -55,8 +56,8 @@ def train_epoch(engine, epoch_id, print_batch_step):
             inp_np = batch[0].numpy()
             targets = engine.teacher_model(inp_np)[0]
             targets = paddle.to_tensor(targets)._to(engine.device)
-            if batch[0].shape[-1] != engine.model.img_size:
-                batch[0] = F.interpolate(batch[0], (engine.model.img_size, engine.model.img_size))
+            if batch[0].shape[-1] != student_size:
+                batch[0] = F.interpolate(batch[0], (student_size, student_size))
             out = engine.model(batch[0])
             loss_dict = engine.train_loss_func(out, targets)
 
@@ -119,9 +120,7 @@ def eval_epoch(engine, epoch_id, is_ema=False):
     print_batch_step = engine.config["Global"]["print_batch_step"]
     tic = time.time()
 
-    total_samples = (
-        len(engine.eval_dataloader.dataset) if not engine.use_dali else engine.eval_dataloader.size
-    )
+    student_size = engine.config["Global"].get("student_size", 512)
     max_iter = (
         len(engine.eval_dataloader) - 1
         if platform.system() == "Windows"
@@ -145,8 +144,8 @@ def eval_epoch(engine, epoch_id, is_ema=False):
             inp_np = batch[0].numpy()
             targets = engine.teacher_model(inp_np)[0]
             targets = paddle.to_tensor(targets)._to(engine.device)
-            if batch[0].shape[-1] != engine.model.img_size:
-                batch[0] = F.interpolate(batch[0], (engine.model.img_size, engine.model.img_size))
+            if batch[0].shape[-1] != student_size:
+                batch[0] = F.interpolate(batch[0], (student_size, student_size))
             out = engine.model(batch[0])
             loss_dict = engine.eval_loss_func(out, targets)
 
