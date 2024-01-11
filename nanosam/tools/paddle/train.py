@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 from ppcls.utils import config
-from ppcls.engine.engine import Engine
+from nanosam.tools.paddle.engine import Engine
 
 import logging
 

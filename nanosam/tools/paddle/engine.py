@@ -28,8 +28,10 @@ from ppcls.utils.save_load import init_model
 from ppcls.engine.train.utils import type_name
 
 from nanosam.models.paddle import build_model
+from nanosam.utils.onnx_model import OnnxModel
 from .loader import build_dataloader
 from .train_utils import train_epoch, eval_epoch
+from .trt_model import TrtModel
 
 
 class Engine(object):
@@ -149,6 +151,13 @@ class Engine(object):
         if self.config["Global"].get("print_model", False):
             print("Model architecture")
             print(self.model)
+        
+        # SAM Teacher
+        self.train_batch_size = config["DataLoader"]["Train"]["sampler"]["batch_size"]
+        if self.mode in ["train", "eval"]:
+            teacher_model_config = config["Teacher"]
+            teacher_model_type = teacher_model_config.pop("name", "TrtModel")
+            self.teacher_model = eval(teacher_model_type)(**teacher_model_config)
 
         # load_pretrain
         if self.config["Global"]["pretrained_model"] is not None:
