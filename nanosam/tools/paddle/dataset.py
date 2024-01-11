@@ -24,7 +24,7 @@ class ImageFolderDataset(Dataset):
             image = transform(image, self._transform_ops)
         image = np.asarray(image)
         image = np.transpose(image, (2, 0, 1))
-        return image
+        return image, np.zeros(1)
 
     def __len__(self):
         return len(self.images)
