@@ -45,8 +45,7 @@ if __name__ == "__main__":
     predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider, provider_options)
 
     # Read image and run image encoder
-    # image = PIL.Image.open("assets/dogs.jpg")
-    image = PIL.Image.open("app/assets/picture3.jpg")
+    image = PIL.Image.open("assets/dogs.jpg")
     predictor.set_image(image)
 
     # Segment using bounding box
