@@ -39,7 +39,7 @@ class ConvLayer(nn.Layer):
             padding=padding,
             dilation=(dilation, dilation),
             groups=groups,
-            bias=use_bias,
+            bias_attr=use_bias,
         )
         self.norm = build_norm(norm, num_features=out_channels)
         self.act = build_act(act_func)
@@ -284,7 +284,7 @@ class DAGBlock(nn.Layer):
         self.output_keys = list(outputs.keys())
         self.output_ops = nn.LayerList(list(outputs.values()))
 
-    def forward(self, feature_dict: List[str, paddle.Tensor]) -> Dict[str, paddle.Tensor]:
+    def forward(self, feature_dict: Dict[str, paddle.Tensor]) -> Dict[str, paddle.Tensor]:
         feat = [op(feature_dict[key]) for key, op in zip(self.input_keys, self.input_ops)]
         if self.merge == "add":
             feat = list_sum(feat)
