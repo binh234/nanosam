@@ -18,20 +18,20 @@ class TrtModel:
 
     def get_inference_info(self, engine):
         self.context = engine.create_execution_context()
-        self.stream = paddle.device.cuda.current_stream(device=self.device)
+        self.stream = paddle.device.cuda.current_stream()
         self.input_shapes = []
         self.output_shapes = []
         self.binding_outputs = []
         self.outputs = []
 
         for binding in engine:
-            shape = engine.get_binding_shape(binding)
-            dtype = trt.nptype(engine.get_binding_dtype(binding))
+            shape = engine.get_tensor_shape(binding)
+            dtype = trt.nptype(engine.get_tensor_dtype(binding))
 
             if engine.get_tensor_mode(binding) == trt.TensorIOMode.INPUT:
                 self.input_shapes.append(shape)
             else:
-                tensor = paddle.to_tensor(np.empty(shape, dtype=np.dtype(dtype))).to(self.device)
+                tensor = paddle.to_tensor(np.empty(shape, dtype=np.dtype(dtype)), place=self.device)
                 self.binding_outputs.append(tensor.data_ptr())
                 self.outputs.append(tensor)
                 self.output_shapes.append(shape)

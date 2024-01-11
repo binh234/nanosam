@@ -23,6 +23,9 @@ from ppcls.engine.train.utils import log_info, type_name, update_loss
 from ppcls.utils import logger, profiler
 from ppcls.utils.misc import AverageMeter
 
+from nanosam.utils.onnx_model import OnnxModel
+from .trt_model import TrtModel
+
 
 def train_epoch(engine, epoch_id, print_batch_step):
     tic = time.time()
@@ -53,9 +56,13 @@ def train_epoch(engine, epoch_id, print_batch_step):
 
         # image input
         with engine.auto_cast(is_eval=False):
-            inp_np = batch[0].numpy()
-            targets = engine.teacher_model(inp_np)[0]
-            targets = paddle.to_tensor(targets)._to(engine.device)
+            if isinstance(engine.teacher_model, OnnxModel):
+                inp_np = batch[0].numpy()
+                targets = engine.teacher_model(inp_np)[0]
+                targets = paddle.to_tensor(targets, place=engine.device)
+            else:
+                targets = engine.teacher_model(batch[0])[0]
+            
             if batch[0].shape[-1] != student_size:
                 batch[0] = F.interpolate(batch[0], (student_size, student_size))
             out = engine.model(batch[0])
@@ -141,9 +148,13 @@ def eval_epoch(engine, epoch_id, is_ema=False):
 
         # image input
         with engine.auto_cast(is_eval=True):
-            inp_np = batch[0].numpy()
-            targets = engine.teacher_model(inp_np)[0]
-            targets = paddle.to_tensor(targets)._to(engine.device)
+            if isinstance(engine.teacher_model, OnnxModel):
+                inp_np = batch[0].numpy()
+                targets = engine.teacher_model(inp_np)[0]
+                targets = paddle.to_tensor(targets, place=engine.device)
+            else:
+                targets = engine.teacher_model(batch[0])[0]
+
             if batch[0].shape[-1] != student_size:
                 batch[0] = F.interpolate(batch[0], (student_size, student_size))
             out = engine.model(batch[0])

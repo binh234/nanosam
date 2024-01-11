@@ -151,13 +151,15 @@ class Engine(object):
         if self.config["Global"].get("print_model", False):
             print("Model architecture")
             print(self.model)
-        
+
         # SAM Teacher
         self.train_batch_size = config["DataLoader"]["Train"]["sampler"]["batch_size"]
         if self.mode in ["train", "eval"]:
             teacher_model_config = config["Teacher"]
             teacher_model_type = teacher_model_config.pop("name", "TrtModel")
-            self.teacher_model = eval(teacher_model_type)(**teacher_model_config)
+            self.teacher_model = eval(teacher_model_type)(
+                device=self.device, **teacher_model_config
+            )
 
         # load_pretrain
         if self.config["Global"]["pretrained_model"] is not None:
