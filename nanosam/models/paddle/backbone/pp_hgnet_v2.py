@@ -15,11 +15,11 @@ from typing import Dict
 def PPHGNetV2Backbone__forward(self, x: paddle.Tensor) -> Dict[str, paddle.Tensor]:
     output_dict = {}
     x = self.stem(x)
-    x = self.pool(x)
 
     for stage_id, stage in enumerate(self.stages, 1):
         output_dict["stage%d" % stage_id] = x = stage(x)
-    return x
+    output_dict["stage_final"] = x
+    return output_dict
 
 
 def PPHGNetV2Backbone_B0(pretrained=False, use_ssld=False, **kwargs):

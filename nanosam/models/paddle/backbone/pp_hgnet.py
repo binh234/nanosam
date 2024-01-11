@@ -11,7 +11,8 @@ def PPHGNetBackbone__forward(self, x: paddle.Tensor) -> Dict[str, paddle.Tensor]
 
     for stage_id, stage in enumerate(self.stages, 1):
         output_dict["stage%d" % stage_id] = x = stage(x)
-    return x
+    output_dict["stage_final"] = x
+    return output_dict
 
 
 def PPHGNetBackbone_tiny(pretrained=False, use_ssld=False, **kwargs):

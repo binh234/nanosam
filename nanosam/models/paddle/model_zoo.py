@@ -43,11 +43,11 @@ class ImageEncoder(nn.Layer):
 
     def forward(self, x: paddle.Tensor) -> paddle.Tensor:
         feed_dict = self.backbone(x)
-        output = self.neck(feed_dict)
+        out = self.neck(feed_dict)
 
-        if not self.return_dict and isinstance(output, dict):
+        if not self.return_dict and isinstance(out, dict):
             out = out["features"]
-        return output
+        return out
 
 
 def Sam_PPHGNetV2_B0(**kwargs):
@@ -215,7 +215,7 @@ def Sam_PPLCNetV2_base(**kwargs):
     return model
 
 
-def Sam_PPLCNetV2large(**kwargs):
+def Sam_PPLCNetV2_large(**kwargs):
     backbone = PPLCNetV2Backbone_large(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
