@@ -115,7 +115,6 @@ def train_epoch(engine, epoch_id, print_batch_step):
     plt.subplot(122)
     plt.imshow(out[0, 0].detach().cpu().numpy())
     plt.savefig(os.path.join(image_dir, f"epoch_{epoch_id}.png"))
-    plt.show()
 
 
 def eval_epoch(engine, epoch_id, is_ema=False):
