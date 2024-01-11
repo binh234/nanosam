@@ -8,12 +8,12 @@ class ConvNeck(nn.Layer):
         self,
         in_channels: str,
         num_upsample: str,
-        num_conv_layers=3,
+        num_conv_layers: int = 3,
         feature_dim: int = 256,
         feature_shape: int = 64,
         neck_channels: int = 256,
         pos_embedding: bool = True,
-        fid: str="stage_final",
+        fid: str = "stage_final",
         **kwargs,
     ):
         super().__init__()

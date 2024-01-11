@@ -29,7 +29,7 @@ class SamNeck(DAGBlock):
         for fid, in_channel in zip(fid_list, in_channel_list):
             inputs[fid] = OpSequential(
                 [
-                    ConvLayer(in_channel, head_width, 1, norm=norm, act_func=None),
+                    ConvLayer(in_channel, head_width, 3, norm=norm, act_func=None),
                     UpSampleLayer(size=(64, 64)),
                 ]
             )
