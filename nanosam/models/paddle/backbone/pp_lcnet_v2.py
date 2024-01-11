@@ -1,7 +1,8 @@
 import paddle
-from functools import partial
 from ppcls.arch.backbone import PPLCNetV2_base, PPLCNetV2_large, PPLCNetV2_small
 from typing import Dict
+
+from .wrapper import ModelWrapper
 
 
 def PPLCNetV2Backbone__forward(self, x: paddle.Tensor) -> Dict[str, paddle.Tensor]:
@@ -26,8 +27,7 @@ def PPLCNetV2Backbone_small(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPLCNetV2_small(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPLCNetV2Backbone__forward, model)
-    return model
+    return ModelWrapper(model, PPLCNetV2Backbone__forward)
 
 
 def PPLCNetV2Backbone_base(pretrained=False, use_ssld=False, **kwargs):
@@ -42,8 +42,7 @@ def PPLCNetV2Backbone_base(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPLCNetV2_base(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPLCNetV2Backbone__forward, model)
-    return model
+    return ModelWrapper(model, PPLCNetV2Backbone__forward)
 
 
 def PPLCNetV2Backbone_large(pretrained=False, use_ssld=False, **kwargs):
@@ -58,5 +57,4 @@ def PPLCNetV2Backbone_large(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPLCNetV2_large(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPLCNetV2Backbone__forward, model)
-    return model
+    return ModelWrapper(model, PPLCNetV2Backbone__forward)

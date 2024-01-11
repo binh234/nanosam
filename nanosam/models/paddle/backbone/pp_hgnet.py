@@ -1,7 +1,8 @@
 import paddle
-from functools import partial
 from ppcls.arch.backbone import PPHGNet_small, PPHGNet_tiny
 from typing import Dict
+
+from .wrapper import ModelWrapper
 
 
 def PPHGNetBackbone__forward(self, x: paddle.Tensor) -> Dict[str, paddle.Tensor]:
@@ -27,8 +28,7 @@ def PPHGNetBackbone_tiny(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPHGNet_tiny(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPHGNetBackbone__forward, model)
-    return model
+    return ModelWrapper(model, PPHGNetBackbone__forward)
 
 
 def PPHGNetBackbone_small(pretrained=False, use_ssld=False, **kwargs):
@@ -43,5 +43,4 @@ def PPHGNetBackbone_small(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPHGNet_small(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPHGNetBackbone__forward, model)
-    return model
+    return ModelWrapper(model, PPHGNetBackbone__forward)

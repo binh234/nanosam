@@ -1,5 +1,4 @@
 import paddle
-from functools import partial
 from ppcls.arch.backbone import (
     PPHGNetV2_B0,
     PPHGNetV2_B1,
@@ -10,6 +9,8 @@ from ppcls.arch.backbone import (
     PPHGNetV2_B6,
 )
 from typing import Dict
+
+from .wrapper import ModelWrapper
 
 
 def PPHGNetV2Backbone__forward(self, x: paddle.Tensor) -> Dict[str, paddle.Tensor]:
@@ -34,8 +35,7 @@ def PPHGNetV2Backbone_B0(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPHGNetV2_B0(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPHGNetV2Backbone__forward, model)
-    return model
+    return ModelWrapper(model, PPHGNetV2Backbone__forward)
 
 
 def PPHGNetV2Backbone_B1(pretrained=False, use_ssld=False, **kwargs):
@@ -50,8 +50,7 @@ def PPHGNetV2Backbone_B1(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPHGNetV2_B1(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPHGNetV2Backbone__forward, model)
-    return model
+    return ModelWrapper(model, PPHGNetV2Backbone__forward)
 
 
 def PPHGNetV2Backbone_B2(pretrained=False, use_ssld=False, **kwargs):
@@ -66,8 +65,7 @@ def PPHGNetV2Backbone_B2(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPHGNetV2_B2(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPHGNetV2Backbone__forward, model)
-    return model
+    return ModelWrapper(model, PPHGNetV2Backbone__forward)
 
 
 def PPHGNetV2Backbone_B3(pretrained=False, use_ssld=False, **kwargs):
@@ -82,8 +80,7 @@ def PPHGNetV2Backbone_B3(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPHGNetV2_B3(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPHGNetV2Backbone__forward, model)
-    return model
+    return ModelWrapper(model, PPHGNetV2Backbone__forward)
 
 
 def PPHGNetV2Backbone_B4(pretrained=False, use_ssld=False, **kwargs):
@@ -98,8 +95,7 @@ def PPHGNetV2Backbone_B4(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPHGNetV2_B4(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPHGNetV2Backbone__forward, model)
-    return model
+    return ModelWrapper(model, PPHGNetV2Backbone__forward)
 
 
 def PPHGNetV2Backbone_B5(pretrained=False, use_ssld=False, **kwargs):
@@ -114,8 +110,7 @@ def PPHGNetV2Backbone_B5(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPHGNetV2_B5(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPHGNetV2Backbone__forward, model)
-    return model
+    return ModelWrapper(model, PPHGNetV2Backbone__forward)
 
 
 def PPHGNetV2Backbone_B6(pretrained=False, use_ssld=False, **kwargs):
@@ -130,5 +125,4 @@ def PPHGNetV2Backbone_B6(pretrained=False, use_ssld=False, **kwargs):
     """
 
     model = PPHGNetV2_B6(pretrained=pretrained, use_ssld=use_ssld, **kwargs)
-    model.forward = partial(PPHGNetV2Backbone__forward, model)
-    return model
+    return ModelWrapper(model, PPHGNetV2Backbone__forward)
