@@ -13,23 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any
-import cv2
 import numpy as np
-import PIL.Image
+import cv2
+
+from typing import Any
 
 from .onnx_model import OnnxModel
 
 
 def preprocess_image(image, size: int = 512):
-    if isinstance(image, np.ndarray):
-        image = PIL.Image.fromarray(image)
+    if not isinstance(image, np.ndarray):
+        image = np.asarray(image)
 
     image_mean = np.asarray([123.675, 116.28, 103.53])[:, None, None]
     image_std = np.asarray([58.395, 57.12, 57.375])[:, None, None]
 
-    image_pil = image
-    aspect_ratio = image_pil.width / image_pil.height
+    height, width = image.shape[:2]
+    aspect_ratio = width / height
     if aspect_ratio >= 1:
         resize_width = size
         resize_height = int(size / aspect_ratio)
@@ -37,8 +37,7 @@ def preprocess_image(image, size: int = 512):
         resize_height = size
         resize_width = int(size * aspect_ratio)
 
-    image_pil_resized = image_pil.resize((resize_width, resize_height))
-    image_np_resized = np.asarray(image_pil_resized, dtype=np.float32)
+    image_np_resized = cv2.resize(np.asarray(image), (resize_width, resize_height))
     image_np_resized = np.transpose(image_np_resized, (2, 0, 1))
     image_np_resized_normalized = (image_np_resized - image_mean) / image_std
     image_tensor = np.zeros((1, 3, size, size), dtype=np.float32)
@@ -78,7 +77,7 @@ def upscale_mask(mask, image_shape, size=256, interpolation=cv2.INTER_LINEAR):
     """_summary_
 
     Args:
-        mask (np.ndarray): Input mask
+        mask (np.ndarray): Input mask with shape [B, C, H, W]
         image_shape (Union[int, Tuple[int, int]]): Desired output size in (H, W) format
         size (int, optional): Mask size. Defaults to 256.
 
