@@ -35,6 +35,7 @@ class ImageEncoder(nn.Layer):
         backbone: Union[Dict, nn.Layer],
         neck: Union[Dict, nn.Layer],
         return_dict: bool = False,
+        **kwargs,
     ) -> None:
         super().__init__()
         self.backbone = backbone if isinstance(backbone, nn.Layer) else build_model(backbone)
@@ -241,7 +242,7 @@ def Conv_PPHGNet_tiny(image_size=512, **kwargs):
         feature_dim=256,
         neck_channels=256,
         pos_embedding=True,
-        use_lab=True,
+        use_lab=False,
     )
 
     model = ImageEncoder(backbone, neck)
@@ -277,7 +278,7 @@ def Conv_PPLCNetV2_base(image_size=512, **kwargs):
         feature_dim=256,
         neck_channels=256,
         pos_embedding=True,
-        use_lab=True,
+        use_lab=False,
     )
 
     model = ImageEncoder(backbone, neck)

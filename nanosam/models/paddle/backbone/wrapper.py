@@ -2,7 +2,7 @@ import paddle.nn as nn
 
 
 class ModelWrapper(nn.Layer):
-    def __init__(self, model: nn.Layer, forward_func: function):
+    def __init__(self, model: nn.Layer, forward_func: callable):
         super().__init__()
         self.model = model
         self._forward_func = forward_func

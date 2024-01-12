@@ -47,67 +47,6 @@ class LearnableAffineBlock(nn.Layer):
         return self.scale * x + self.bias
 
 
-class ConvBNAct(nn.Layer):
-    """
-    ConvBNAct is a combination of convolution and batchnorm layers.
-
-    Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        kernel_size (int): Size of the convolution kernel. Defaults to 3.
-        stride (int): Stride of the convolution. Defaults to 1.
-        padding (int/str): Padding or padding type for the convolution. Defaults to 1.
-        groups (int): Number of groups for the convolution. Defaults to 1.
-        use_act: (bool): Whether to use activation function. Defaults to True.
-        use_lab (bool): Whether to use the LAB operation. Defaults to False.
-        lr_mult (float): Learning rate multiplier for the layer. Defaults to 1.0.
-    """
-
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        groups=1,
-        use_act=True,
-        use_lab=False,
-        lr_mult=1.0,
-    ):
-        super().__init__()
-        self.use_act = use_act
-        self.use_lab = use_lab
-        self.conv = nn.Conv2D(
-            in_channels,
-            out_channels,
-            kernel_size,
-            stride,
-            padding=padding if isinstance(padding, str) else (kernel_size - 1) // 2,
-            groups=groups,
-            weight_attr=ParamAttr(learning_rate=lr_mult, initializer=KaimingNormal()),
-            bias_attr=False,
-        )
-        self.bn = nn.BatchNorm2D(
-            out_channels,
-            weight_attr=ParamAttr(regularizer=L2Decay(0.0), learning_rate=lr_mult),
-            bias_attr=ParamAttr(regularizer=L2Decay(0.0), learning_rate=lr_mult),
-        )
-        if self.use_act:
-            self.act = nn.ReLU()
-            if self.use_lab:
-                self.lab = LearnableAffineBlock(lr_mult=lr_mult)
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.bn(x)
-        if self.use_act:
-            x = self.act(x)
-            if self.use_lab:
-                x = self.lab(x)
-        return x
-
-
 class ConvLayer(nn.Layer):
     def __init__(
         self,
@@ -121,12 +60,14 @@ class ConvLayer(nn.Layer):
         dropout=0,
         norm="bn2D",
         act_func="relu",
+        use_lab=False,
     ):
         super(ConvLayer, self).__init__()
 
         padding = get_same_padding(kernel_size)
         padding *= dilation
 
+        self.use_lab = use_lab
         self.dropout = nn.Dropout2D(dropout, inplace=False) if dropout > 0 else None
         self.conv = nn.Conv2D(
             in_channels,
@@ -140,6 +81,8 @@ class ConvLayer(nn.Layer):
         )
         self.norm = build_norm(norm, num_features=out_channels)
         self.act = build_act(act_func)
+        if self.act and self.use_lab:
+            self.lab = LearnableAffineBlock()
 
     def forward(self, x: paddle.Tensor) -> paddle.Tensor:
         if self.dropout is not None:
@@ -149,13 +92,15 @@ class ConvLayer(nn.Layer):
             x = self.norm(x)
         if self.act:
             x = self.act(x)
+            if self.use_lab:
+                x = self.lab(x)
         return x
 
 
 class UpSampleLayer(nn.Layer):
     def __init__(
         self,
-        mode="bicubic",
+        mode="nearest",
         size: int or Tuple[int, int] or List[int] or None = None,
         factor=2,
         align_corners=False,

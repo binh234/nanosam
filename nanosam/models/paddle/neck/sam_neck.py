@@ -1,8 +1,7 @@
 from ppcls.arch.backbone.legendary_models.pp_hgnet_v2 import HGV2_Block
-from ppcls.arch.backbone.legendary_models.pp_lcnet_v2 import RepDepthwiseSeparable
 from typing import List
 
-from ..nn.ops import ConvBNAct, ConvLayer, DAGBlock, FusedMBConv, OpSequential, UpSampleLayer
+from ..nn.ops import ConvLayer, DAGBlock, FusedMBConv, OpSequential, UpSampleLayer
 
 
 class SamNeck(DAGBlock):
@@ -17,20 +16,20 @@ class SamNeck(DAGBlock):
         out_dim: int = 256,
         norm="bn2D",
         act_func="gelu",
-        use_lab=True,
+        use_lab=False,
         **kwargs,
     ):
         inputs = {}
         for fid, in_channel in zip(fid_list, in_channel_list):
             inputs[fid] = OpSequential(
                 [
-                    ConvBNAct(in_channel, head_width, 3, use_act=True, use_lab=use_lab),
+                    ConvLayer(in_channel, head_width, 3, norm=norm, act_func=act_func, use_lab=use_lab),
                     UpSampleLayer(size=(64, 64)),
                 ]
             )
 
         middle = []
-        for _ in range(head_depth):
+        for i in range(head_depth):
             if middle_op == "fmbconv":
                 block = FusedMBConv(
                     head_width,
@@ -47,20 +46,9 @@ class SamNeck(DAGBlock):
                     out_channels=head_width,
                     kernel_size=3,
                     layer_num=3,
-                    identity=True,
+                    identity=False if i == 0 else True,
                     light_block=True,
                     use_lab=use_lab,
-                )
-            elif middle_op == "repdw":
-                block = RepDepthwiseSeparable(
-                    in_channels=head_width,
-                    out_channels=head_width,
-                    stride=1,
-                    dw_size=3,
-                    split_pw=False,
-                    use_rep=True,
-                    use_se=False,
-                    use_shortcut=True,
                 )
             else:
                 raise NotImplementedError

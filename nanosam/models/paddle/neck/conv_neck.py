@@ -14,7 +14,7 @@ class ConvNeck(nn.Layer):
         neck_channels: int = 256,
         pos_embedding: bool = True,
         fid: str = "stage_final",
-        use_lab: bool = True,
+        use_lab: bool = False,
         **kwargs,
     ):
         super().__init__()
@@ -58,9 +58,9 @@ class ConvNeck(nn.Layer):
     def forward(self, feed_dict: Dict[str, paddle.Tensor]):
         x = feed_dict[self.fid]
         x = self.up(x)
-        x = self.proj(x)
         if self.use_lab:
             x = self.lab(x)
+        x = self.proj(x)
         if self.pos_embedding is not None:
             x = x + self.pos_embedding
         return x
