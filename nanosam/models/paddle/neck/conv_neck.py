@@ -8,10 +8,10 @@ class ConvNeck(nn.Layer):
         self,
         in_channels: str,
         num_upsample: str,
-        num_conv_layers: int = 2,
+        num_conv_layers: int = 3,
         feature_dim: int = 256,
         feature_shape: int = 64,
-        neck_channels: int = 256,
+        out_channels: int = 256,
         pos_embedding: bool = True,
         fid: str = "stage_final",
         use_lab: bool = False,
@@ -23,20 +23,20 @@ class ConvNeck(nn.Layer):
 
         up_layers = []
         for _ in range(num_conv_layers):
-            up_layers.append(nn.Conv2D(in_channels, neck_channels, 3, padding=1))
+            up_layers.append(nn.Conv2D(in_channels, out_channels, 3, padding=1))
             up_layers.append(nn.GELU())
-            in_channels = neck_channels
+            in_channels = out_channels
 
         for _ in range(num_upsample):
-            up_layers.append(nn.Conv2DTranspose(neck_channels, neck_channels, 3, 2, 1, 1))
+            up_layers.append(nn.Conv2DTranspose(out_channels, out_channels, 3, 2, 1, 1))
             up_layers.append(nn.GELU())
 
         self.up = nn.Sequential(*up_layers)
 
         self.proj = nn.Sequential(
-            nn.Conv2D(neck_channels, neck_channels, 3, padding=1),
+            nn.Conv2D(out_channels, out_channels, 3, padding=1),
             nn.GELU(),
-            nn.Conv2D(neck_channels, feature_dim, 1, padding=0),
+            nn.Conv2D(out_channels, feature_dim, 1, padding=0),
         )
         
         if self.use_lab:

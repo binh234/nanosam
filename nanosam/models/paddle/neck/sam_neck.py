@@ -1,4 +1,5 @@
 from ppcls.arch.backbone.legendary_models.pp_hgnet_v2 import HGV2_Block
+from ppcls.arch.backbone.legendary_models.pp_lcnet_v2 import RepDepthwiseSeparable
 from typing import List
 
 from ..nn.ops import ConvLayer, DAGBlock, FusedMBConv, OpSequential, UpSampleLayer
@@ -23,14 +24,16 @@ class SamNeck(DAGBlock):
         for fid, in_channel in zip(fid_list, in_channel_list):
             inputs[fid] = OpSequential(
                 [
-                    ConvLayer(in_channel, head_width, 3, norm=norm, act_func=act_func, use_lab=use_lab),
+                    ConvLayer(
+                        in_channel, head_width, 3, norm=norm, act_func=act_func, use_lab=use_lab
+                    ),
                     UpSampleLayer(size=(64, 64)),
                 ]
             )
 
-        middle = []
-        for i in range(head_depth):
-            if middle_op == "fmbconv":
+        if middle_op == "fmbconv":
+            middle = []
+            for i in range(head_depth):
                 block = FusedMBConv(
                     head_width,
                     head_width,
@@ -39,20 +42,32 @@ class SamNeck(DAGBlock):
                     act_func=(act_func, None),
                     identity=True,
                 )
-            elif middle_op == "hgv2":
-                block = HGV2_Block(
-                    in_channels=head_width,
-                    mid_channels=round(head_width * expand_ratio),
-                    out_channels=head_width,
-                    kernel_size=3,
-                    layer_num=3,
-                    identity=False if i == 0 else True,
-                    light_block=True,
-                    use_lab=use_lab,
-                )
-            else:
-                raise NotImplementedError
-            middle.append(block)
+                middle.append(block)
+        elif middle_op == "hgv2":
+            middle = HGV2_Block(
+                in_channels=head_width,
+                mid_channels=round(head_width * expand_ratio),
+                out_channels=head_width,
+                kernel_size=3,
+                layer_num=head_depth,
+                identity=True,
+                light_block=True,
+                use_lab=use_lab,
+            )
+        elif middle_op == "repdw":
+            middle = RepDepthwiseSeparable(
+                in_channels=head_width,
+                out_channels=head_width,
+                stride=1,
+                dw_size=3,
+                split_pw=True,
+                use_rep=True,
+                use_se=True,
+                use_shortcut=True,
+            )
+        else:
+            raise NotImplementedError
+
         middle = OpSequential(middle)
 
         outputs = {

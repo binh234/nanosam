@@ -238,9 +238,8 @@ def Conv_PPHGNet_tiny(image_size=512, **kwargs):
         fid="stage_final",
         in_channels=768,
         num_upsample=num_upsample,
-        num_conv_layers=2,
+        num_conv_layers=3,
         feature_dim=256,
-        neck_channels=256,
         pos_embedding=True,
         use_lab=False,
     )
@@ -256,9 +255,8 @@ def Conv_PPHGNetV2_B1(image_size=512, **kwargs):
         fid="stage_final",
         in_channels=1024,
         num_upsample=num_upsample,
-        num_conv_layers=2,
+        num_conv_layers=3,
         feature_dim=256,
-        neck_channels=256,
         pos_embedding=True,
         use_lab=True,
     )
@@ -274,9 +272,8 @@ def Conv_PPLCNetV2_base(image_size=512, **kwargs):
         fid="stage_final",
         in_channels=1024,
         num_upsample=num_upsample,
-        num_conv_layers=2,
+        num_conv_layers=3,
         feature_dim=256,
-        neck_channels=256,
         pos_embedding=True,
         use_lab=False,
     )
