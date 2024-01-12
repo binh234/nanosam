@@ -1,23 +1,25 @@
 from typing import Dict
 import paddle
 import paddle.nn as nn
-
+from ..nn.ops import LearnableAffineBlock
 
 class ConvNeck(nn.Layer):
     def __init__(
         self,
         in_channels: str,
         num_upsample: str,
-        num_conv_layers: int = 3,
+        num_conv_layers: int = 2,
         feature_dim: int = 256,
         feature_shape: int = 64,
         neck_channels: int = 256,
         pos_embedding: bool = True,
         fid: str = "stage_final",
+        use_lab: bool = True,
         **kwargs,
     ):
         super().__init__()
         self.fid = fid
+        self.use_lab = use_lab
 
         up_layers = []
         for _ in range(num_conv_layers):
@@ -36,6 +38,9 @@ class ConvNeck(nn.Layer):
             nn.GELU(),
             nn.Conv2D(neck_channels, feature_dim, 1, padding=0),
         )
+        
+        if self.use_lab:
+            self.lab = LearnableAffineBlock()
 
         if pos_embedding:
             data = 1e-5 * paddle.randn(
@@ -52,7 +57,10 @@ class ConvNeck(nn.Layer):
 
     def forward(self, feed_dict: Dict[str, paddle.Tensor]):
         x = feed_dict[self.fid]
-        x = self.proj(self.up(x))
+        x = self.up(x)
+        x = self.proj(x)
+        if self.use_lab:
+            x = self.lab(x)
         if self.pos_embedding is not None:
             x = x + self.pos_embedding
         return x

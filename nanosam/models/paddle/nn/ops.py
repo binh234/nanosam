@@ -1,14 +1,111 @@
-from typing import Dict, List, Tuple
 import paddle
-from paddle import nn
+from paddle import ParamAttr, nn
+from paddle.nn.initializer import Constant, KaimingNormal
+from paddle.regularizer import L2Decay
+from typing import Dict, List, Tuple
 
 from .act import build_act
 from .norm import build_norm
-from .utils import list_sum, val2list, val2tuple, resize, get_same_padding
+from .utils import get_same_padding, list_sum, resize, val2list, val2tuple
 
 #################################################################################
 #                             Basic Layers                                      #
 #################################################################################
+
+
+class LearnableAffineBlock(nn.Layer):
+    """
+    Create a learnable affine block module. This module can significantly improve accuracy on smaller models.
+
+    Args:
+        scale_value (float): The initial value of the scale parameter, default is 1.0.
+        bias_value (float): The initial value of the bias parameter, default is 0.0.
+        lr_mult (float): The learning rate multiplier, default is 1.0.
+        lab_lr (float): The learning rate, default is 0.01.
+    """
+
+    def __init__(self, scale_value=1.0, bias_value=0.0, lr_mult=1.0, lab_lr=0.01):
+        super().__init__()
+        self.scale = self.create_parameter(
+            shape=[
+                1,
+            ],
+            default_initializer=Constant(value=scale_value),
+            attr=ParamAttr(learning_rate=lr_mult * lab_lr),
+        )
+        self.add_parameter("scale", self.scale)
+        self.bias = self.create_parameter(
+            shape=[
+                1,
+            ],
+            default_initializer=Constant(value=bias_value),
+            attr=ParamAttr(learning_rate=lr_mult * lab_lr),
+        )
+        self.add_parameter("bias", self.bias)
+
+    def forward(self, x):
+        return self.scale * x + self.bias
+
+
+class ConvBNAct(nn.Layer):
+    """
+    ConvBNAct is a combination of convolution and batchnorm layers.
+
+    Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        kernel_size (int): Size of the convolution kernel. Defaults to 3.
+        stride (int): Stride of the convolution. Defaults to 1.
+        padding (int/str): Padding or padding type for the convolution. Defaults to 1.
+        groups (int): Number of groups for the convolution. Defaults to 1.
+        use_act: (bool): Whether to use activation function. Defaults to True.
+        use_lab (bool): Whether to use the LAB operation. Defaults to False.
+        lr_mult (float): Learning rate multiplier for the layer. Defaults to 1.0.
+    """
+
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        groups=1,
+        use_act=True,
+        use_lab=False,
+        lr_mult=1.0,
+    ):
+        super().__init__()
+        self.use_act = use_act
+        self.use_lab = use_lab
+        self.conv = nn.Conv2D(
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride,
+            padding=padding if isinstance(padding, str) else (kernel_size - 1) // 2,
+            groups=groups,
+            weight_attr=ParamAttr(learning_rate=lr_mult, initializer=KaimingNormal()),
+            bias_attr=False,
+        )
+        self.bn = nn.BatchNorm2D(
+            out_channels,
+            weight_attr=ParamAttr(regularizer=L2Decay(0.0), learning_rate=lr_mult),
+            bias_attr=ParamAttr(regularizer=L2Decay(0.0), learning_rate=lr_mult),
+        )
+        if self.use_act:
+            self.act = nn.ReLU()
+            if self.use_lab:
+                self.lab = LearnableAffineBlock(lr_mult=lr_mult)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        if self.use_act:
+            x = self.act(x)
+            if self.use_lab:
+                x = self.lab(x)
+        return x
 
 
 class ConvLayer(nn.Layer):
@@ -78,107 +175,11 @@ class UpSampleLayer(nn.Layer):
 class IdentityLayer(nn.Layer):
     def forward(self, x: paddle.Tensor) -> paddle.Tensor:
         return x
-    
+
+
 #################################################################################
 #                             Basic Blocks                                      #
 #################################################################################
-
-
-class DSConv(nn.Layer):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size=3,
-        stride=1,
-        use_bias=False,
-        norm=("bn2D", "bn2D"),
-        act_func=("relu6", None),
-    ):
-        super(DSConv, self).__init__()
-
-        use_bias = val2tuple(use_bias, 2)
-        norm = val2tuple(norm, 2)
-        act_func = val2tuple(act_func, 2)
-
-        self.depth_conv = ConvLayer(
-            in_channels,
-            in_channels,
-            kernel_size,
-            stride,
-            groups=in_channels,
-            norm=norm[0],
-            act_func=act_func[0],
-            use_bias=use_bias[0],
-        )
-        self.point_conv = ConvLayer(
-            in_channels,
-            out_channels,
-            1,
-            norm=norm[1],
-            act_func=act_func[1],
-            use_bias=use_bias[1],
-        )
-
-    def forward(self, x: paddle.Tensor) -> paddle.Tensor:
-        x = self.depth_conv(x)
-        x = self.point_conv(x)
-        return x
-
-
-class MBConv(nn.Layer):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size=3,
-        stride=1,
-        mid_channels=None,
-        expand_ratio=6,
-        use_bias=False,
-        norm=("bn2D", "bn2D", "bn2D"),
-        act_func=("relu6", "relu6", None),
-    ):
-        super(MBConv, self).__init__()
-
-        use_bias = val2tuple(use_bias, 3)
-        norm = val2tuple(norm, 3)
-        act_func = val2tuple(act_func, 3)
-        mid_channels = mid_channels or round(in_channels * expand_ratio)
-
-        self.inverted_conv = ConvLayer(
-            in_channels,
-            mid_channels,
-            1,
-            stride=1,
-            norm=norm[0],
-            act_func=act_func[0],
-            use_bias=use_bias[0],
-        )
-        self.depth_conv = ConvLayer(
-            mid_channels,
-            mid_channels,
-            kernel_size,
-            stride=stride,
-            groups=mid_channels,
-            norm=norm[1],
-            act_func=act_func[1],
-            use_bias=use_bias[1],
-        )
-        self.point_conv = ConvLayer(
-            mid_channels,
-            out_channels,
-            1,
-            norm=norm[2],
-            act_func=act_func[2],
-            use_bias=use_bias[2],
-        )
-
-    def forward(self, x: paddle.Tensor) -> paddle.Tensor:
-        x = self.inverted_conv(x)
-        x = self.depth_conv(x)
-        x = self.point_conv(x)
-        return x
 
 
 class FusedMBConv(nn.Layer):
@@ -194,11 +195,13 @@ class FusedMBConv(nn.Layer):
         use_bias=False,
         norm=("bn2D", "bn2D"),
         act_func=("relu6", None),
+        identity=False,
     ):
         super().__init__()
         use_bias = val2tuple(use_bias, 2)
         norm = val2tuple(norm, 2)
         act_func = val2tuple(act_func, 2)
+        self.identity = identity
 
         mid_channels = mid_channels or round(in_channels * expand_ratio)
 
@@ -222,13 +225,18 @@ class FusedMBConv(nn.Layer):
         )
 
     def forward(self, x: paddle.Tensor) -> paddle.Tensor:
+        identity = x
         x = self.spatial_conv(x)
         x = self.point_conv(x)
+        if self.identity:
+            x += identity
         return x
-    
+
+
 #################################################################################
 #                             Functional Blocks                                 #
 #################################################################################
+
 
 class ResidualBlock(nn.Layer):
     def __init__(

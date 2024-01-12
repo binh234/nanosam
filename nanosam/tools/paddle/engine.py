@@ -386,7 +386,7 @@ class Engine(object):
 
         logger.info(f"Export input shape: {shape}")
         model = paddle.jit.to_static(
-            model, input_spec=[paddle.static.InputSpec(shape=shape, dtype="float32")]
+            model, input_spec=[paddle.static.InputSpec(shape=shape, dtype="float32", name="image")]
         )
         if hasattr(model.base_model, "quanter") and model.base_model.quanter is not None:
             model.base_model.quanter.save_quantized_model(model, save_path + "_int8")
