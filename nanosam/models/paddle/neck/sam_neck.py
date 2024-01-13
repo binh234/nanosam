@@ -43,6 +43,7 @@ class SamNeck(DAGBlock):
                     identity=True,
                 )
                 middle.append(block)
+            middle = OpSequential(middle)
         elif middle_op == "hgv2":
             middle = HGV2_Block(
                 in_channels=head_width,
@@ -67,8 +68,6 @@ class SamNeck(DAGBlock):
             )
         else:
             raise NotImplementedError
-
-        middle = OpSequential(middle)
 
         outputs = {
             "features": OpSequential(
