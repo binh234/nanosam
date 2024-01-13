@@ -62,7 +62,7 @@ if __name__ == "__main__":
         results = filter_results_by_area(results, 96**2, None)
 
     miou = compute_iou(results)
-    print(f"mIOU {args.size}: {miou}")
+    print(f"mIOU {args.size}: {miou:.3f}")
 
     if args.size == "all":
         size_names = ["small", "medium", "large"]
@@ -70,4 +70,4 @@ if __name__ == "__main__":
         for i, name in enumerate(size_names):
             results_filtered = filter_results_by_area(results, size_areas[i], size_areas[i + 1])
             miou_filtered = compute_iou(results_filtered)
-            print(f"mIOU {name}: {miou_filtered}")
+            print(f"mIOU {name}: {miou_filtered:.3f}")
