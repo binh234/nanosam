@@ -14,8 +14,8 @@
 # limitations under the License.
 
 
-import json
 import argparse
+import json
 
 
 def filter_results_by_area(results, min=None, max=None):
@@ -33,6 +33,10 @@ def filter_results_by_category_id(results, category_id):
     return [r for r in results if r["category_id"] == category_id]
 
 
+def compute_iou(results):
+    return sum(r["iou"] for r in results) / len(results)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("coco_results", type=str, default="data/mobile_sam_coco_results.json")
@@ -47,6 +51,9 @@ if __name__ == "__main__":
     with open(args.coco_results, "r") as f:
         results = json.load(f)
 
+    if args.category_id is not None:
+        results = filter_results_by_category_id(results, args.category_id)
+
     if args.size == "small":
         results = filter_results_by_area(results, None, 32**2)
     elif args.size == "medium":
@@ -54,9 +61,13 @@ if __name__ == "__main__":
     elif args.size == "large":
         results = filter_results_by_area(results, 96**2, None)
 
-    if args.category_id is not None:
-        results = filter_results_by_category_id(results, args.category_id)
+    miou = compute_iou(results)
+    print(f"mIOU {args.size}: {miou}")
 
-    miou = sum(r["iou"] for r in results) / len(results)
-
-    print(f"mIOU: {miou}")
+    if args.size == "all":
+        size_names = ["small", "medium", "large"]
+        size_areas = [None, 32**2, 96**2, None]
+        for i, name in enumerate(size_names):
+            results_filtered = filter_results_by_area(results, size_areas[i], size_areas[i + 1])
+            miou_filtered = compute_iou(results_filtered)
+            print(f"mIOU {name}: {miou_filtered}")
