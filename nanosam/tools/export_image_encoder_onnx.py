@@ -54,7 +54,7 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     with torch.no_grad():
-        model = create_model(args.model_name)
+        model = create_model(args.model_name, args.input_size)
         data = torch.randn(1, 3, args.input_size, args.input_size).to(device)
         model.load_state_dict(torch.load(args.checkpoint)["model"])
         model = model.cuda().eval()
