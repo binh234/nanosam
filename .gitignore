@@ -4,6 +4,7 @@
 __py
 **/__pycache__/
 data
+results
 **.egg-info
 *.onnx
 .hypothesis
