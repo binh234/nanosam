@@ -65,5 +65,6 @@ if __name__ == "__main__":
             args.output,
             input_names=["image"],
             output_names=["image_embeddings"],
+            dynamic_axes={"image": {0: "batch_size"}},
             opset_version=args.opset,
         )
