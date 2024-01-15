@@ -6,8 +6,8 @@ from ..nn.ops import LearnableAffineBlock
 class ConvNeck(nn.Layer):
     def __init__(
         self,
-        in_channels: str,
-        num_upsample: str,
+        in_channels: int,
+        num_upsample: int,
         num_conv_layers: int = 3,
         feature_dim: int = 256,
         feature_shape: int = 64,
