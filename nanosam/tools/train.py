@@ -135,6 +135,7 @@ if __name__ == "__main__":
     else:
         start_epoch = 0
 
+    scaler = torch.cuda.amp.GradScaler()
     for epoch in range(start_epoch, args.num_epochs):
         epoch_loss = 0.0
 
@@ -143,21 +144,22 @@ if __name__ == "__main__":
             image = image.cuda()
             if len(image) != args.batch_size:
                 continue
-            
+
             with torch.no_grad():
                 features = image_encoder_trt(image)
             if args.teacher_size != args.student_size:
                 image = F.interpolate(image, (args.student_size, args.student_size), mode="area")
 
             optimizer.zero_grad()
-            output = image_encoder_cnn(image)
+            with torch.cuda.amp.autocast():
+                output = image_encoder_cnn(image)
+                loss = loss_function(output, features)
 
-            loss = loss_function(output, features)
-
-            loss.backward()
-            optimizer.step()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
             epoch_loss += float(loss)
-        
+
             if (cnt + 1) % args.log_step == 0:
                 prog_bar.set_postfix_str(f"loss: {epoch_loss / (cnt + 1):.5f}")
 
