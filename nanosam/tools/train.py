@@ -101,6 +101,9 @@ if __name__ == "__main__":
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
+    if not os.path.exists(os.path.join(args.output_dir, "images")):
+        os.makedirs(os.path.join(args.output_dir, "images"))
+
     image_encoder_trt = load_image_encoder_engine(args.teacher_image_encoder_engine)
 
     image_encoder_cnn = create_model(args.model_name, args.student_size).cuda()
