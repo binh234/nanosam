@@ -101,5 +101,5 @@ def efficientvit_b0(img_size=1024):
 
 
 @register_model("efficientvit_b1")
-def efficientvit_b0(img_size=1024):
+def efficientvit_b1(img_size=1024):
     return TimmImageEncoder("efficientvit_b1", pretrained=True, img_size=img_size)
