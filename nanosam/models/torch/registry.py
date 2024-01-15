@@ -25,8 +25,8 @@ def register_model(name: str):
     return _register_model
 
 
-def create_model(name: str):
-    return MODELS[name]()
+def create_model(name: str, img_size: int = 1024):
+    return MODELS[name](img_size=img_size)
 
 
 def list_models():

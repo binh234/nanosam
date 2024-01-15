@@ -15,7 +15,7 @@
 
 
 import torch
-from nanosam.models import create_model
+from nanosam.models.torch import create_model
 import argparse
 
 

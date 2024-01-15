@@ -19,7 +19,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, random_split
 
 from nanosam.datasets.image_folder import ImageFolder
-from nanosam.models import create_model, list_models
+from nanosam.models.torch import create_model, list_models
 
 import argparse
 import os
@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     image_encoder_trt = load_image_encoder_engine(args.teacher_image_encoder_engine)
 
-    image_encoder_cnn = create_model(args.model_name).cuda()
+    image_encoder_cnn = create_model(args.model_name, args.student_size).cuda()
 
     if args.loss == "huber":
         loss_function = F.huber_loss
