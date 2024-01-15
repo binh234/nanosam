@@ -181,5 +181,5 @@ if __name__ == "__main__":
         plt.imshow(features[0, 0].detach().cpu().numpy())
         plt.subplot(122)
         plt.imshow(output[0, 0].detach().cpu().numpy())
-        plt.savefig(os.path.join(args.output_dir, f"epoch_{epoch}.png"))
+        plt.savefig(os.path.join(args.output_dir, "images", f"epoch_{epoch}.png"))
         plt.close()
