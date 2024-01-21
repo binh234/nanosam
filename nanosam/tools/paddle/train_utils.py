@@ -62,7 +62,7 @@ def train_epoch(engine, epoch_id, print_batch_step):
                 targets = paddle.to_tensor(targets, place=engine.device)
             else:
                 targets = engine.teacher_model(batch[0])[0]
-            
+
             if batch[0].shape[-1] != student_size:
                 batch[0] = F.interpolate(batch[0], (student_size, student_size))
             out = engine.model(batch[0])
@@ -165,6 +165,7 @@ def eval_epoch(engine, epoch_id, is_ema=False):
                     output_info[key] = AverageMeter(key, "7.5f")
                 output_info[key].update(float(loss_dict[key]), batch_size)
 
+        time_info["batch_cost"].update(time.time() - tic)
         if iter_id % print_batch_step == 0:
             time_msg = "s, ".join(
                 ["{}: {:.5f}".format(key, time_info[key].avg) for key in time_info]
@@ -182,7 +183,6 @@ def eval_epoch(engine, epoch_id, is_ema=False):
         tic = time.time()
 
     metric_msg = ", ".join(["{}: {:.5f}".format(key, output_info[key].avg) for key in output_info])
-    metric_msg += ", {}".format(engine.eval_metric_func.avg_info)
     logger.info("[Eval][Epoch {}][Avg]{}".format(epoch_id, metric_msg))
 
     eval_loss = sum([output_info[key].avg for key in output_info]) / len(output_info)

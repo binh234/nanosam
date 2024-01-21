@@ -222,7 +222,7 @@ class Engine(object):
         print_batch_step = self.config["Global"]["print_batch_step"]
         save_interval = self.config["Global"]["save_interval"]
         best_metric = {
-            "metric": -1.0,
+            "metric": float("inf"),
             "epoch": 0,
         }
         ema_module = None
