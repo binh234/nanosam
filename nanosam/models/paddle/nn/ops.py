@@ -100,7 +100,7 @@ class ConvLayer(nn.Layer):
 class UpSampleLayer(nn.Layer):
     def __init__(
         self,
-        mode="nearest",
+        mode="bilinear",
         size: int or Tuple[int, int] or List[int] or None = None,
         factor=2,
         align_corners=False,
