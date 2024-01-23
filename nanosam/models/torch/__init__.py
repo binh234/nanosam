@@ -22,4 +22,5 @@ from .timm_image_encoder import (
     resnet50,
     efficientvit_b0,
     efficientvit_b1,
+    efficientvit_m5,
 )
