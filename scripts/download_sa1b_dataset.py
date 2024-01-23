@@ -44,15 +44,15 @@ def download_sa1b_dataset(out_dir, chunks):
         for j in range(start, end):
             selected_chunks.add(j)
 
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
     url_dict = download_sa1b_chunk_txt(out_dir)
     cdn_links = []
     for i in selected_chunks:
         chunk_name = f"sa_{str(i).zfill(6)}"
         if chunk_name in url_dict:
             cdn_links.append(url_dict[chunk_name])
-
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
 
     with ThreadPoolExecutor() as exe:
         exe.map(download_and_extract_tar_file, cdn_links, [out_dir] * len(cdn_links))
