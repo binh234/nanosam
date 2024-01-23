@@ -184,7 +184,7 @@ NanoSAM is fairly easy to get started with.
 5. Run the basic usage example
 
     ```
-    python3 examples/basic_usage.py \
+    python3 scripts/basic_usage.py \
         --image_encoder=data/resnet18_image_encoder.engine \
         --mask_decoder=data/mobile_sam_mask_decoder.engine
     ```
@@ -210,7 +210,7 @@ segmentation.
 To run the example, call
 
 ```python3
-python3 examples/basic_usage.py \
+python3 scripts/basic_usage.py \
     --image_encoder="data/resnet18_image_encoder.engine" \
     --mask_decoder="data/mobile_sam_mask_decoder.engine"
 ```
@@ -225,7 +225,7 @@ and then segmenting these objects using NanoSAM.
 To run the example, call
 
 ```bash
-python3 examples/segment_from_owl.py \
+python3 scripts/segment_from_owl.py \
     --prompt="A tree" \
     --image_encoder="data/resnet18_image_encoder.engine" \
     --mask_decoder="data/mobile_sam_mask_decoder.engine
@@ -248,7 +248,7 @@ This example demonstrates how to use human pose keypoints from [TRTPose](https:/
 To run the example, call
 
 ```bash
-python3 examples/segment_from_pose.py
+python3 scripts/segment_from_pose.py
 ```
 
 This will save an output figure to ``data/segment_from_pose_out.png``.
@@ -263,7 +263,7 @@ a live camera feed.  This example requires an attached display and camera.
 To run the example, call
 
 ```python3
-python3 examples/demo_pose_tshirt.py
+python3 scripts/demo_pose_tshirt.py
 ```
 
 ### Example 5 - Segment and track (experimental)
@@ -276,7 +276,7 @@ This example requires an attached display and camera.
 To run the example, call
 
 ```python3
-python3 examples/demo_click_segment_track.py <image_encoder_engine> <mask_decoder_engine>
+python3 scripts/demo_click_segment_track.py <image_encoder_engine> <mask_decoder_engine>
 ```
 
 Once the example is running **double click** an object you want to track.
