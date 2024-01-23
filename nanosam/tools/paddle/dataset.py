@@ -6,9 +6,6 @@ from paddle.io import Dataset
 from ppcls.data.preprocess import transform
 from ppcls.data.dataloader.common_dataset import create_operators
 
-from nanosam.utils.onnx_model import OnnxModel
-
-
 class ImageFolderDataset(Dataset):
     def __init__(self, image_root, transform_ops=None, **kwargs):
         self._img_root = image_root
@@ -18,13 +15,22 @@ class ImageFolderDataset(Dataset):
         image_paths += glob.glob(os.path.join(self._img_root, "*.png"))
         self.images = image_paths
 
-    def __getitem__(self, index):
+    def try_getitem(self, index):
         image = PIL.Image.open(self.images[index]).convert("RGB")
         if self._transform_ops:
             image = transform(image, self._transform_ops)
         image = np.asarray(image)
         image = np.transpose(image, (2, 0, 1))
         return image, np.zeros(1)
+
+    def __getitem__(self, index):
+        try:
+            self.try_getitem(index)
+        except Exception as ex:
+            print("Exception occured when parse line: {} with msg: {}".
+                         format(self.images[index], ex))
+            rnd_idx = np.random.randint(self.__len__())
+            return self.try_getitem(rnd_idx)
 
     def __len__(self):
         return len(self.images)
