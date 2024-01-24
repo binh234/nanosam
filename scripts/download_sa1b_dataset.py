@@ -35,7 +35,7 @@ def download_sa1b_chunk_txt(directory, filename="data_urls.txt"):
     return url_dict
 
 
-def download_sa1b_dataset(out_dir, chunks):
+def download_sa1b_dataset(out_dir, chunks, num_workers=8):
     assert len(chunks) % 2 == 0
     selected_chunks = set()
     for i in range(0, len(chunks), 2):
@@ -54,13 +54,14 @@ def download_sa1b_dataset(out_dir, chunks):
         if chunk_name in url_dict:
             cdn_links.append(url_dict[chunk_name])
 
-    with ThreadPoolExecutor() as exe:
+    with ThreadPoolExecutor(max_workers=num_workers) as exe:
         exe.map(download_and_extract_tar_file, cdn_links, [out_dir] * len(cdn_links))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", "-o", type=str, default="data/sa1b")
+    parser.add_argument("--num_workers", "-w", type=int, default=8)
     parser.add_argument(
         "--chunks",
         type=int,
@@ -69,4 +70,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    download_sa1b_dataset(args.out, args.chunks)
+    download_sa1b_dataset(args.out, args.chunks, args.num_workers)
