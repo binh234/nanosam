@@ -70,17 +70,28 @@ def build_dataloader(config, mode, device, use_dali=False, seed=None):
         else None
     )
 
-    data_loader = DataLoader(
-        dataset=dataset,
-        places=device,
-        num_workers=num_workers,
-        return_list=True,
-        use_shared_memory=use_shared_memory,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        drop_last=drop_last,
-        worker_init_fn=init_fn,
-    )
+    if batch_sampler is None:
+        data_loader = DataLoader(
+            dataset=dataset,
+            places=device,
+            num_workers=num_workers,
+            return_list=True,
+            use_shared_memory=use_shared_memory,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last,
+            worker_init_fn=init_fn,
+        )
+    else:
+        data_loader = DataLoader(
+            dataset=dataset,
+            places=device,
+            num_workers=num_workers,
+            return_list=True,
+            use_shared_memory=use_shared_memory,
+            batch_sampler=batch_sampler,
+            worker_init_fn=init_fn,
+        )
 
     logger.debug("build data_loader({}) success...".format(data_loader))
     return data_loader
