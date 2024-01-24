@@ -25,7 +25,7 @@ class ImageFolderDataset(Dataset):
 
     def __getitem__(self, index):
         try:
-            self.try_getitem(index)
+            return self.try_getitem(index)
         except Exception as ex:
             print("Exception occured when parse line: {} with msg: {}".
                          format(self.images[index], ex))
