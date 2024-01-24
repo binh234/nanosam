@@ -34,15 +34,10 @@ def build_dataloader(config, mode, device, use_dali=False, seed=None):
     assert mode in config.keys(), "{} config not in yaml".format(mode)
     # build dataset
 
-    class_num = config.get("class_num", None)
     epochs = config.get("epochs", None)
     config_dataset = config[mode]["dataset"]
     config_dataset = copy.deepcopy(config_dataset)
     dataset_name = config_dataset.pop("name")
-    if "batch_transform_ops" in config_dataset:
-        batch_transform = config_dataset.pop("batch_transform_ops")
-    else:
-        batch_transform = None
 
     dataset = eval(dataset_name)(**config_dataset)
 
@@ -64,25 +59,6 @@ def build_dataloader(config, mode, device, use_dali=False, seed=None):
 
     logger.debug("build batch_sampler({}) success...".format(batch_sampler))
 
-    # build batch operator
-    def mix_collate_fn(batch):
-        batch = transform(batch, batch_ops)
-        # batch each field
-        slots = []
-        for items in batch:
-            for i, item in enumerate(items):
-                if len(slots) < len(items):
-                    slots.append([item])
-                else:
-                    slots[i].append(item)
-        return [np.stack(slot, axis=0) for slot in slots]
-
-    if isinstance(batch_transform, list):
-        batch_ops = create_operators(batch_transform, class_num)
-        batch_collate_fn = mix_collate_fn
-    else:
-        batch_collate_fn = None
-
     # build dataloader
     config_loader = config[mode]["loader"]
     num_workers = config_loader["num_workers"]
@@ -94,30 +70,17 @@ def build_dataloader(config, mode, device, use_dali=False, seed=None):
         else None
     )
 
-    if batch_sampler is None:
-        data_loader = DataLoader(
-            dataset=dataset,
-            places=device,
-            num_workers=num_workers,
-            return_list=True,
-            use_shared_memory=use_shared_memory,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            drop_last=drop_last,
-            collate_fn=batch_collate_fn,
-            worker_init_fn=init_fn,
-        )
-    else:
-        data_loader = DataLoader(
-            dataset=dataset,
-            places=device,
-            num_workers=num_workers,
-            return_list=True,
-            use_shared_memory=use_shared_memory,
-            batch_sampler=batch_sampler,
-            collate_fn=batch_collate_fn,
-            worker_init_fn=init_fn,
-        )
+    data_loader = DataLoader(
+        dataset=dataset,
+        places=device,
+        num_workers=num_workers,
+        return_list=True,
+        use_shared_memory=use_shared_memory,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        drop_last=drop_last,
+        worker_init_fn=init_fn,
+    )
 
     logger.debug("build data_loader({}) success...".format(data_loader))
     return data_loader
