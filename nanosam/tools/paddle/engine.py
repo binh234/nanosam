@@ -160,6 +160,8 @@ class Engine(object):
             self.teacher_model = eval(teacher_model_type)(
                 device=self.device, **teacher_model_config
             )
+        else:
+            self.teacher_model = None
 
         # load_pretrain
         if self.config["Global"]["pretrained_model"] is not None:

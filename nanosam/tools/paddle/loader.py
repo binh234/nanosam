@@ -6,11 +6,9 @@ import paddle.distributed as dist
 import random
 from functools import partial
 from paddle.io import BatchSampler, DataLoader, DistributedBatchSampler
-from ppcls.data import create_operators
-from ppcls.data.preprocess import transform
 from ppcls.utils import logger
 
-from .dataset import ImageFolderDataset
+from .dataset import ImageFolderDataset, SamImageFolderDataset
 
 
 def worker_init_fn(worker_id: int, num_workers: int, rank: int, seed: int):

@@ -24,7 +24,6 @@ from ppcls.utils import logger, profiler
 from ppcls.utils.misc import AverageMeter
 
 from nanosam.utils.onnx_model import OnnxModel
-from .trt_model import TrtModel
 
 
 def train_epoch(engine, epoch_id, print_batch_step):
@@ -49,14 +48,16 @@ def train_epoch(engine, epoch_id, print_batch_step):
         engine.time_info["reader_cost"].update(time.time() - tic)
 
         batch_size = batch[0].shape[0]
-        if batch_size != engine.train_batch_size:
+        if engine.teacher_model is not None and batch_size != engine.train_batch_size:
             continue
 
         engine.global_step += 1
 
         # image input
         with engine.auto_cast(is_eval=False):
-            if isinstance(engine.teacher_model, OnnxModel):
+            if engine.teacher_model is None:
+                targets = batch[1]
+            elif isinstance(engine.teacher_model, OnnxModel):
                 inp_np = batch[0].numpy()
                 targets = engine.teacher_model(inp_np)[0]
                 targets = paddle.to_tensor(targets, place=engine.device)
@@ -64,7 +65,7 @@ def train_epoch(engine, epoch_id, print_batch_step):
                 targets = engine.teacher_model(batch[0])[0]
 
             if batch[0].shape[-1] != student_size:
-                batch[0] = F.interpolate(batch[0], (student_size, student_size))
+                batch[0] = F.interpolate(batch[0], (student_size, student_size), mode="bilinear")
             out = engine.model(batch[0])
             loss_dict = engine.train_loss_func(out, targets)
 
@@ -142,12 +143,14 @@ def eval_epoch(engine, epoch_id, is_ema=False):
         time_info["reader_cost"].update(time.time() - tic)
         batch_size = batch[0].shape[0]
 
-        if batch_size != engine.train_batch_size:
+        if engine.teacher_model is not None and batch_size != engine.train_batch_size:
             continue
 
         # image input
         with engine.auto_cast(is_eval=True):
-            if isinstance(engine.teacher_model, OnnxModel):
+            if engine.teacher_model is None:
+                targets = batch[1]
+            elif isinstance(engine.teacher_model, OnnxModel):
                 inp_np = batch[0].numpy()
                 targets = engine.teacher_model(inp_np)[0]
                 targets = paddle.to_tensor(targets, place=engine.device)
@@ -155,7 +158,7 @@ def eval_epoch(engine, epoch_id, is_ema=False):
                 targets = engine.teacher_model(batch[0])[0]
 
             if batch[0].shape[-1] != student_size:
-                batch[0] = F.interpolate(batch[0], (student_size, student_size))
+                batch[0] = F.interpolate(batch[0], (student_size, student_size), mode="bilinear")
             out = engine.model(batch[0])
             loss_dict = engine.eval_loss_func(out, targets)
 
