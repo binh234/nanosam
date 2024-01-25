@@ -6,6 +6,7 @@ from paddle.io import Dataset
 from ppcls.data.preprocess import transform
 from ppcls.data.dataloader.common_dataset import create_operators
 
+
 class ImageFolderDataset(Dataset):
     def __init__(self, image_root, transform_ops=None, **kwargs):
         self._img_root = image_root
@@ -27,10 +28,11 @@ class ImageFolderDataset(Dataset):
         try:
             return self.try_getitem(index)
         except Exception as ex:
-            print("Exception occured when parse line: {} with msg: {}".
-                         format(self.images[index], ex))
+            print(
+                "Exception occured when parse line: {} with msg: {}".format(self.images[index], ex)
+            )
             rnd_idx = np.random.randint(self.__len__())
-            return self.try_getitem(rnd_idx)
+            return self.__getitem__(rnd_idx)
 
     def __len__(self):
         return len(self.images)
