@@ -1,36 +1,32 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import os
-import shutil
-import platform
-import paddle
-import paddle.distributed as dist
-from visualdl import LogWriter
-from paddle import nn
+from __future__ import absolute_import, division, print_function
 import numpy as np
-import random
-
-from ppcls.utils.misc import AverageMeter
-from ppcls.utils import logger
-from ppcls.utils.logger import init_logger
-from ppcls.utils.config import print_config
-from ppcls.arch import apply_to_static
-from ppcls.loss import build_loss
-from ppcls.optimizer import build_optimizer
-from ppcls.utils.amp import AutoCast, build_scaler
-from ppcls.utils.checkpointer import Checkpointer
-from ppcls.utils.ema import ExponentialMovingAverage
-from ppcls.utils.save_load import load_dygraph_pretrain, load_dygraph_pretrain_from_url
-from ppcls.utils.save_load import init_model
-
-from ppcls.engine.train.utils import type_name
 
 from nanosam.models.paddle import build_model
 from nanosam.utils.onnx_model import OnnxModel
+
+import os
+import paddle
+import paddle.distributed as dist
+import platform
+import random
+import shutil
+from paddle import nn
+from ppcls.arch import apply_to_static
+from ppcls.engine.train.utils import type_name
+from ppcls.optimizer import build_optimizer
+from ppcls.utils import logger
+from ppcls.utils.amp import AutoCast, build_scaler
+from ppcls.utils.checkpointer import Checkpointer
+from ppcls.utils.config import print_config
+from ppcls.utils.ema import ExponentialMovingAverage
+from ppcls.utils.logger import init_logger
+from ppcls.utils.misc import AverageMeter
+from ppcls.utils.save_load import init_model, load_dygraph_pretrain, load_dygraph_pretrain_from_url
+from visualdl import LogWriter
+
 from .loader import build_dataloader
-from .train_utils import train_epoch, eval_epoch
+from .loss import build_loss
+from .train_utils import eval_epoch, train_epoch
 from .trt_model import TrtModel
 
 
