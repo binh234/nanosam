@@ -1,18 +1,7 @@
-# Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 from __future__ import absolute_import, division, print_function
 from matplotlib import pyplot as plt
+
+from nanosam.utils.onnx_model import OnnxModel
 
 import os
 import paddle
@@ -22,8 +11,6 @@ import time
 from ppcls.engine.train.utils import log_info, type_name, update_loss
 from ppcls.utils import logger, profiler
 from ppcls.utils.misc import AverageMeter
-
-from nanosam.utils.onnx_model import OnnxModel
 
 
 def train_epoch(engine, epoch_id, print_batch_step):
@@ -188,5 +175,8 @@ def eval_epoch(engine, epoch_id, is_ema=False):
     metric_msg = ", ".join(["{}: {:.5f}".format(key, output_info[key].avg) for key in output_info])
     logger.info("[Eval][Epoch {}][Avg]{}".format(epoch_id, metric_msg))
 
-    eval_loss = sum([output_info[key].avg for key in output_info]) / len(output_info)
+    if "loss" in output_info:
+        eval_loss = output_info["loss"].avg
+    else:
+        eval_loss = sum([output_info[key].avg for key in output_info]) / len(output_info)
     return eval_loss
