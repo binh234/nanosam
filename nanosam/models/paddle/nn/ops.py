@@ -79,7 +79,12 @@ class ConvLayer(nn.Layer):
             groups=groups,
             bias_attr=use_bias,
         )
-        self.norm = build_norm(norm, num_features=out_channels)
+        self.norm = build_norm(
+            norm,
+            num_features=out_channels,
+            weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
+            bias_attr=ParamAttr(regularizer=L2Decay(0.0)),
+        )
         self.act = build_act(act_func)
         if self.act and self.use_lab:
             self.lab = LearnableAffineBlock()
@@ -94,6 +99,54 @@ class ConvLayer(nn.Layer):
             x = self.act(x)
             if self.use_lab:
                 x = self.lab(x)
+        return x
+
+
+class LightConvLayer(nn.Layer):
+    """
+    LightConvLayer is a combination of pw and dw layers.
+
+    Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        kernel_size (int): Size of the depth-wise convolution kernel.
+        use_lab (bool): Whether to use the LAB operation. Defaults to False.
+        norm (str): Normalization layer to use. Defaults to Batchnorm2D.
+        act_func (str): Activation function to use. Defaults to ReLU.
+    """
+
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        use_lab=False,
+        norm="bn2D",
+        act_func="relu",
+        **kwargs
+    ):
+        super().__init__()
+        self.conv1 = ConvLayer(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=1,
+            norm=norm,
+            act_func=act_func,
+            use_lab=use_lab,
+        )
+        self.conv2 = ConvLayer(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            groups=out_channels,
+            norm=norm,
+            act_func=act_func,
+            use_lab=use_lab,
+        )
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
         return x
 
 
@@ -125,6 +178,90 @@ class IdentityLayer(nn.Layer):
 #################################################################################
 #                             Basic Blocks                                      #
 #################################################################################
+
+
+class HGV2_Act_Block(nn.Layer):
+    """
+    HGV2_Block with custom activation, the basic unit that constitutes the HGV2_Stage.
+
+    Args:
+        in_channels (int): Number of input channels.
+        mid_channels (int): Number of middle channels.
+        out_channels (int): Number of output channels.
+        kernel_size (int): Size of the convolution kernel. Defaults to 3.
+        layer_num (int): Number of layers in the HGV2 block. Defaults to 6.
+        stride (int): Stride of the convolution. Defaults to 1.
+        padding (int/str): Padding or padding type for the convolution. Defaults to 1.
+        groups (int): Number of groups for the convolution. Defaults to 1.
+        norm (str): Normalization layer to use. Defaults to Batchnorm2D.
+        act_func (str): Activation function to use. Defaults to ReLU.
+        use_lab (bool): Whether to use the LAB operation. Defaults to False.
+    """
+
+    def __init__(
+        self,
+        in_channels,
+        mid_channels,
+        out_channels,
+        kernel_size=3,
+        layer_num=6,
+        identity=False,
+        light_block=True,
+        norm="bn2D",
+        act_func="relu",
+        use_lab=False,
+    ):
+        super().__init__()
+        self.identity = identity
+
+        self.layers = nn.LayerList()
+        block_type = "LightConvLayer" if light_block else "ConvLayer"
+        for i in range(layer_num):
+            self.layers.append(
+                eval(block_type)(
+                    in_channels=in_channels if i == 0 else mid_channels,
+                    out_channels=mid_channels,
+                    stride=1,
+                    kernel_size=kernel_size,
+                    norm=norm,
+                    act_func=act_func,
+                    use_lab=use_lab,
+                )
+            )
+        # feature aggregation
+        total_channels = in_channels + layer_num * mid_channels
+        self.aggregation_squeeze_conv = ConvLayer(
+            in_channels=total_channels,
+            out_channels=out_channels // 2,
+            kernel_size=1,
+            stride=1,
+            norm=norm,
+            act_func=act_func,
+            use_lab=use_lab,
+        )
+        self.aggregation_excitation_conv = ConvLayer(
+            in_channels=out_channels // 2,
+            out_channels=out_channels,
+            kernel_size=1,
+            stride=1,
+            norm=norm,
+            act_func=act_func,
+            use_lab=use_lab,
+        )
+
+    def forward(self, x):
+        identity = x
+        output = []
+        output.append(x)
+        for layer in self.layers:
+            x = layer(x)
+            output.append(x)
+        x = paddle.concat(output, axis=1)
+        x = self.aggregation_squeeze_conv(x)
+        x = self.aggregation_excitation_conv(x)
+        if self.identity:
+            x += identity
+        return x
 
 
 class FusedMBConv(nn.Layer):

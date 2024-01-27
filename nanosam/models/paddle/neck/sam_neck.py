@@ -2,7 +2,7 @@ from ppcls.arch.backbone.legendary_models.pp_hgnet_v2 import HGV2_Block
 from ppcls.arch.backbone.legendary_models.pp_lcnet_v2 import RepDepthwiseSeparable
 from typing import List
 
-from ..nn.ops import ConvLayer, DAGBlock, FusedMBConv, OpSequential, UpSampleLayer
+from ..nn.ops import ConvLayer, DAGBlock, FusedMBConv, OpSequential, UpSampleLayer, HGV2_Act_Block
 
 
 class SamNeck(DAGBlock):
@@ -44,6 +44,19 @@ class SamNeck(DAGBlock):
                 )
                 middle.append(block)
             middle = OpSequential(middle)
+        elif middle_op == "hgv2_act":
+            middle = HGV2_Act_Block(
+                in_channels=head_width,
+                mid_channels=round(head_width * expand_ratio),
+                out_channels=head_width,
+                kernel_size=3,
+                layer_num=head_depth,
+                identity=True,
+                light_block=True,
+                norm=norm,
+                act_func=act_func,
+                use_lab=use_lab,
+            )
         elif middle_op == "hgv2":
             middle = HGV2_Block(
                 in_channels=head_width,
