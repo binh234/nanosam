@@ -1,1 +1,1 @@
-from .model_zoo import *
+from .image_encoder import *
