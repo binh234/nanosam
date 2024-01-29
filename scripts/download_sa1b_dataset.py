@@ -5,10 +5,13 @@ import os
 import argparse
 
 
-def download_and_extract_tar_file(url, path):
+def download_and_extract_tar_file(url, path, name=None):
     response = requests.get(url, stream=True)
     with tarfile.open(fileobj=response.raw, mode="r|*") as tar:
         tar.extractall(path=path)
+
+    if name:
+        print(f"[INFO] Finish downloading for {name}")
 
 
 def download_sa1b_chunk_txt(directory, filename="data_urls.txt"):
@@ -48,14 +51,13 @@ def download_sa1b_dataset(out_dir, chunks, num_workers=8):
         os.makedirs(out_dir)
 
     url_dict = download_sa1b_chunk_txt(out_dir)
-    cdn_links = []
-    for i in selected_chunks:
-        chunk_name = f"sa_{str(i).zfill(6)}"
-        if chunk_name in url_dict:
-            cdn_links.append(url_dict[chunk_name])
+    selected_chunk_names = list(map(lambda i: f"sa_{str(i).zfill(6)}", selected_chunks))
 
     with ThreadPoolExecutor(max_workers=num_workers) as exe:
-        exe.map(download_and_extract_tar_file, cdn_links, [out_dir] * len(cdn_links))
+        _ = [
+            exe.submit(download_and_extract_tar_file, url_dict[chunk_name], out_dir, chunk_name)
+            for chunk_name in selected_chunk_names
+        ]
 
 
 if __name__ == "__main__":
