@@ -34,6 +34,8 @@ def create_operators(params):
         op = eval(op_name)(**param)
         ops.append(op)
 
+    return ops
+
 
 class UnifiedResize(object):
     def __init__(self, interpolation=None, backend="cv2", return_numpy=True):
@@ -106,17 +108,12 @@ class RandCropImage(object):
         self,
         scale=[0.08, 1.0],
         ratio=[3.0 / 4.0, 4.0 / 3.0],
-        interpolation=None,
         use_log_aspect=False,
-        backend="cv2",
         **kwargs,
     ):
-        assert backend.lower() in ["cv2", "pil"], "Only cv2 and PIL backends are supported"
         self.scale = [0.08, 1.0] if scale is None else scale
         self.ratio = [3.0 / 4.0, 4.0 / 3.0] if ratio is None else ratio
         self.use_log_aspect = use_log_aspect
-
-        self._resize_func = UnifiedResize(interpolation=interpolation, backend=backend)
 
     def __call__(self, img):
         scale = self.scale
@@ -180,10 +177,8 @@ class SamResizeImage(object):
 
         if self.resize_long is not None:
             percent = float(self.resize_long) / max(img_w, img_h)
-            w = img_w * percent
-            h = img_h * percent
-            w = int(w + 0.5)
-            h = int(h + 0.5)
+            w = int(round(img_w * percent))
+            h = int(round(img_h * percent))
         else:
             w, h = self.size
         return self._resize_func(img, (w, h))
@@ -217,11 +212,11 @@ class RandFlipImage(object):
 
 
 class SamPad(object):
-    def __init__(self, size=None, fill_value=0):
+    def __init__(self, size, fill_value=0):
         """
-        Pad image to a specified size or multiple of size_divisor.
+        Pad image to a specified size.
         Args:
-            size (int, list): image target size, if None, pad to multiple of size_divisor, default None
+            size (int, list): image target size
             fill_value (bool): value of pad area, default 0
         """
         if isinstance(size, int):
