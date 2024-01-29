@@ -1,18 +1,29 @@
 import paddle
 import paddle.nn as nn
-
-from .utils import build_kwargs_from_config
+from paddle.nn.initializer import Constant
 from typing import Dict
 
-__all__ = ["LayerNorm2d", "build_norm", "reset_bn", "set_norm_eps"]
+from .utils import build_kwargs_from_config
+
+__all__ = ["LayerNorm2D", "build_norm"]
 
 
-class LayerNorm2D(nn.LayerNorm):
+class LayerNorm2D(nn.Layer):
+    def __init__(self, num_features: int, eps: float = 1e-6, **kwargs) -> None:
+        super().__init__()
+        self.weight = self.create_parameter(
+            shape=[num_features],
+            default_initializer=Constant(1.0),
+        )
+        self.bias = self.create_parameter(
+            shape=[num_features], default_initializer=Constant(0.0), is_bias=True
+        )
+        self.eps = eps
+
     def forward(self, x: paddle.Tensor) -> paddle.Tensor:
         out = x - paddle.mean(x, axis=1, keepdim=True)
         out = out / paddle.sqrt(paddle.square(out).mean(axis=1, keepdim=True) + self.eps)
-        if self.elementwise_affine:
-            out = out * self.weight.view(1, -1, 1, 1) + self.bias.view(1, -1, 1, 1)
+        out = out * self.weight.view(1, -1, 1, 1) + self.bias.view(1, -1, 1, 1)
         return out
 
 
@@ -25,7 +36,7 @@ REGISTERED_NORM_DICT: Dict[str, type] = {
 
 
 def build_norm(name="bn2d", num_features=None, **kwargs) -> nn.Layer or None:
-    if name in ["ln", "ln2d"]:
+    if name == "ln":
         kwargs["normalized_shape"] = num_features
     else:
         kwargs["num_features"] = num_features
