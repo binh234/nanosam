@@ -23,7 +23,7 @@ class LayerNorm2D(nn.Layer):
     def forward(self, x: paddle.Tensor) -> paddle.Tensor:
         out = x - paddle.mean(x, axis=1, keepdim=True)
         out = out / paddle.sqrt(paddle.square(out).mean(axis=1, keepdim=True) + self.eps)
-        out = out * self.weight.view(1, -1, 1, 1) + self.bias.view(1, -1, 1, 1)
+        out = out * self.weight[:, None, None] + self.bias[:, None, None]
         return out
 
 
