@@ -40,15 +40,23 @@ class ImageFolderDataset(Dataset):
 
 
 class SamImageFolderDataset(Dataset):
-    def __init__(self, image_root, feature_root, transform_ops=None, **kwargs):
+    def __init__(self, image_root, feature_root, **kwargs):
         self._img_root = image_root
         self._feature_root = feature_root
 
-        # Only accept normalize and pad ops
-        op_list = [list(operator)[0] for operator in transform_ops]
-        assert (
-            len(op_list) == 3 and op_list[1] == "NormalizeImage" and op_list[2] == "Padv2"
-        ), "Only accept resize longest, normalize, and pad ops when training with extracted features from SAM"
+        # Overwrite transform ops
+        transform_ops = [
+            {"SamResizeImage": {"resize_long": 512, "backend": "pil"}},
+            {
+                "NormalizeImage": {
+                    "scale": 1.0 / 255,
+                    "mean": [0.485, 0.456, 0.406],
+                    "std": [0.229, 0.224, 0.225],
+                    "order": "hwc",
+                }
+            },
+            {"SamPad": {"size": 512}},
+        ]
         self._transform_ops = create_operators(transform_ops)
 
         image_paths = glob.glob(os.path.join(self._img_root, "*.jpg"))
