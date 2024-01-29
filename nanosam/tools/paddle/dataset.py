@@ -1,10 +1,11 @@
-import os
-import glob
 import numpy as np
+
+import glob
+import os
 import PIL
 from paddle.io import Dataset
-from ppcls.data.preprocess import transform
-from ppcls.data.dataloader.common_dataset import create_operators
+
+from .preprocess import create_operators, transform
 
 
 class ImageFolderDataset(Dataset):
