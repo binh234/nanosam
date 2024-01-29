@@ -1,7 +1,9 @@
-from typing import Dict
 import paddle
 import paddle.nn as nn
+from typing import Dict
+
 from ..nn.ops import LearnableAffineBlock
+
 
 class ConvNeck(nn.Layer):
     def __init__(
@@ -38,7 +40,7 @@ class ConvNeck(nn.Layer):
             nn.GELU(),
             nn.Conv2D(out_channels, feature_dim, 1, padding=0),
         )
-        
+
         if self.use_lab:
             self.lab = LearnableAffineBlock()
 
@@ -60,7 +62,7 @@ class ConvNeck(nn.Layer):
         x = self.up(x)
         if self.use_lab:
             x = self.lab(x)
-        x = self.proj(x)
         if self.pos_embedding is not None:
             x = x + self.pos_embedding
-        return x
+        x = self.proj(x)
+        return {"features": x}
