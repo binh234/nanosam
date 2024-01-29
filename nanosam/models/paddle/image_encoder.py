@@ -20,6 +20,7 @@ from .backbone.pp_lcnet_v2 import (
     PPLCNetV2Backbone_small,
 )
 from .neck import ConvNeck, SamNeck
+from .nn.norm import LayerNorm2D
 
 
 def build_model(config):
@@ -40,15 +41,16 @@ class ImageEncoder(nn.Layer):
         super().__init__()
         self.backbone = backbone if isinstance(backbone, nn.Layer) else build_model(backbone)
         self.neck = neck if isinstance(neck, nn.Layer) else build_model(neck)
-        self.return_dict = return_dict
+        self.norm = LayerNorm2D(256)
 
     def forward(self, x: paddle.Tensor) -> paddle.Tensor:
         feed_dict = self.backbone(x)
         out = self.neck(feed_dict)
 
-        if not self.return_dict and isinstance(out, dict):
+        if isinstance(out, dict):
             out = out["features"]
-        return out
+
+        return self.norm(out)
 
 
 def Sam_PPHGNetV2_B0(middle_op="fmbconv", head_depth=4, **kwargs):
