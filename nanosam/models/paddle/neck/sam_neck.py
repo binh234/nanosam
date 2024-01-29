@@ -44,6 +44,22 @@ class SamNeck(DAGBlock):
                 )
                 middle.append(block)
             middle = OpSequential(middle)
+        elif middle_op == "repdw":
+            middle = []
+            # for i in range(head_depth):
+            for _ in range(2):
+                block = RepDepthwiseSeparable(
+                    in_channels=head_width,
+                    out_channels=head_width,
+                    stride=1,
+                    dw_size=3,
+                    split_pw=False,
+                    use_rep=True,
+                    use_se=False,
+                    use_shortcut=True,
+                )
+                middle.append(block)
+            middle = OpSequential(middle)
         elif middle_op == "hgv2_act":
             middle = HGV2_Act_Block(
                 in_channels=head_width,
@@ -67,17 +83,6 @@ class SamNeck(DAGBlock):
                 identity=True,
                 light_block=True,
                 use_lab=use_lab,
-            )
-        elif middle_op == "repdw":
-            middle = RepDepthwiseSeparable(
-                in_channels=head_width,
-                out_channels=head_width,
-                stride=1,
-                dw_size=3,
-                split_pw=True,
-                use_rep=True,
-                use_se=True,
-                use_shortcut=True,
             )
         else:
             raise NotImplementedError
