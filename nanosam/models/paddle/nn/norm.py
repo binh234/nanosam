@@ -9,7 +9,7 @@ __all__ = ["LayerNorm2D", "build_norm"]
 
 
 class LayerNorm2D(nn.Layer):
-    def __init__(self, num_features: int, eps: float = 1e-6, **kwargs) -> None:
+    def __init__(self, num_features: int, eps: float = 2e-5, **kwargs) -> None:
         super().__init__()
         self.weight = self.create_parameter(
             shape=[num_features],
