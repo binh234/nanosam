@@ -9,7 +9,7 @@ __all__ = ["LayerNorm2D", "build_norm"]
 
 
 class LayerNorm2D(nn.Layer):
-    def __init__(self, num_features: int, eps: float = 2e-5, **kwargs) -> None:
+    def __init__(self, num_features: int, eps: float = 1e-5, **kwargs) -> None:
         super().__init__()
         self.weight = self.create_parameter(
             shape=[num_features],
@@ -18,6 +18,7 @@ class LayerNorm2D(nn.Layer):
         self.bias = self.create_parameter(
             shape=[num_features], default_initializer=Constant(0.0), is_bias=True
         )
+        self.normalized_shape = num_features
         self.eps = eps
 
     def forward(self, x: paddle.Tensor) -> paddle.Tensor:
@@ -25,6 +26,9 @@ class LayerNorm2D(nn.Layer):
         out = out / paddle.sqrt(paddle.square(out).mean(axis=1, keepdim=True) + self.eps)
         out = out * self.weight[:, None, None] + self.bias[:, None, None]
         return out
+
+    def extra_repr(self):
+        return f"normalized_shape={self.normalized_shape}, epsilon={self.eps}"
 
 
 # register normalization function here
