@@ -200,7 +200,7 @@ def Sam_PPHGNet_small(middle_op="hgv2", head_depth=6, use_last_norm=True, **kwar
     return model
 
 
-def Sam_PPLCNetV2_small(middle_op="repdw", head_depth=4, use_last_norm=True, **kwargs):
+def Sam_PPLCNetV2_small(middle_op="repdw", head_depth=2, use_last_norm=True, **kwargs):
     backbone = PPLCNetV2Backbone_small(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
@@ -215,7 +215,7 @@ def Sam_PPLCNetV2_small(middle_op="repdw", head_depth=4, use_last_norm=True, **k
     return model
 
 
-def Sam_PPLCNetV2_base(middle_op="repdw", head_depth=4, use_last_norm=True, **kwargs):
+def Sam_PPLCNetV2_base(middle_op="repdw", head_depth=2, use_last_norm=True, **kwargs):
     backbone = PPLCNetV2Backbone_base(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
@@ -230,7 +230,7 @@ def Sam_PPLCNetV2_base(middle_op="repdw", head_depth=4, use_last_norm=True, **kw
     return model
 
 
-def Sam_PPLCNetV2_large(middle_op="repdw", head_depth=6, use_last_norm=True, **kwargs):
+def Sam_PPLCNetV2_large(middle_op="repdw", head_depth=4, use_last_norm=True, **kwargs):
     backbone = PPLCNetV2Backbone_large(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],

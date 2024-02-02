@@ -46,8 +46,7 @@ class SamNeck(DAGBlock):
             middle = OpSequential(middle)
         elif middle_op == "repdw":
             middle = []
-            # for i in range(head_depth):
-            for _ in range(2):
+            for _ in range(head_depth):
                 block = RepDepthwiseSeparable(
                     in_channels=head_width,
                     out_channels=head_width,
