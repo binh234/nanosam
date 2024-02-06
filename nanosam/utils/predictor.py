@@ -37,7 +37,7 @@ def preprocess_image(image, size: int = 512):
         resize_height = size
         resize_width = int(size * aspect_ratio)
 
-    image_np_resized = cv2.resize(np.asarray(image), (resize_width, resize_height))
+    image_np_resized = cv2.resize(image, (resize_width, resize_height))
     image_np_resized = np.transpose(image_np_resized, (2, 0, 1))
     image_np_resized_normalized = (image_np_resized - image_mean) / image_std
     image_tensor = np.zeros((1, 3, size, size), dtype=np.float32)

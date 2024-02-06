@@ -81,7 +81,8 @@ if __name__ == "__main__":
         try:
             basename = os.path.basename(image_path)
             filename, image_ext = os.path.splitext(basename)
-            if image_ext in IMG_EXTENSIONS:
+            save_path = os.path.join(args.out_dir, filename + ".npy")
+            if image_ext in IMG_EXTENSIONS and not os.path.exists(save_path):
                 image = np.asarray(Image.open(image_path).convert("RGB"))
 
                 predictor.set_image(image)
@@ -90,7 +91,6 @@ if __name__ == "__main__":
                 if args.fp16:
                     features = features.astype(np.float16)
 
-                save_path = os.path.join(args.out_dir, filename + ".npy")
                 np.save(save_path, features)
         except Exception as ex:
             print("Exception occured when processing {} with msg: {}".format(image_path, ex))
