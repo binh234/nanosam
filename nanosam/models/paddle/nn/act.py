@@ -18,7 +18,8 @@ REGISTERED_ACT_DICT: Dict[str, type] = {
 
 
 def build_act(name: str, **kwargs) -> nn.Layer or None:
-    name = name.lower()
+    if isinstance(name, str):
+        name = name.lower()
     if name in REGISTERED_ACT_DICT:
         act_cls = REGISTERED_ACT_DICT[name]
         args = build_kwargs_from_config(kwargs, act_cls)
