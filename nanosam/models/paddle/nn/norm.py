@@ -40,6 +40,7 @@ REGISTERED_NORM_DICT: Dict[str, type] = {
 
 
 def build_norm(name="bn2d", num_features=None, **kwargs) -> nn.Layer or None:
+    name = name.lower()
     if name == "ln":
         kwargs["normalized_shape"] = num_features
     else:

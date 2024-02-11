@@ -15,7 +15,7 @@ class SamNeck(DAGBlock):
         expand_ratio: float,
         middle_op: str,
         out_dim: int = 256,
-        norm="bn2D",
+        norm="bn2d",
         act_func="gelu",
         use_lab=False,
         **kwargs,
