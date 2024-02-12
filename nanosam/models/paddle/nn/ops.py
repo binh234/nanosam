@@ -2,7 +2,7 @@ import paddle
 from paddle import ParamAttr, nn
 from paddle.nn.initializer import Constant, KaimingNormal
 from paddle.regularizer import L2Decay
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from .act import build_act
 from .norm import build_norm
@@ -58,7 +58,7 @@ class ConvLayer(nn.Layer):
         groups=1,
         use_bias=False,
         dropout=0,
-        norm="bn2D",
+        norm="bn2d",
         act_func="relu",
         use_lab=False,
     ):
@@ -82,8 +82,6 @@ class ConvLayer(nn.Layer):
         self.norm = build_norm(
             norm,
             num_features=out_channels,
-            weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
-            bias_attr=ParamAttr(regularizer=L2Decay(0.0)),
         )
         self.act = build_act(act_func)
         if self.act and self.use_lab:
@@ -121,7 +119,7 @@ class LightConvLayer(nn.Layer):
         out_channels,
         kernel_size,
         use_lab=False,
-        norm="bn2D",
+        norm="bn2d",
         act_func="relu",
         **kwargs
     ):
@@ -154,7 +152,7 @@ class UpSampleLayer(nn.Layer):
     def __init__(
         self,
         mode="bilinear",
-        size: int or Tuple[int, int] or List[int] or None = None,
+        size: Union[int, Tuple[int, int], List[int], None] = None,
         factor=2,
         align_corners=False,
     ):
@@ -207,7 +205,7 @@ class HGV2_Act_Block(nn.Layer):
         layer_num=6,
         identity=False,
         light_block=True,
-        norm="bn2D",
+        norm="bn2d",
         act_func="relu",
         use_lab=False,
     ):
@@ -275,7 +273,7 @@ class FusedMBConv(nn.Layer):
         expand_ratio=6,
         groups=1,
         use_bias=False,
-        norm=("bn2D", "bn2D"),
+        norm=("bn2d", "bn2d"),
         act_func=("relu6", None),
         identity=False,
     ):
@@ -323,10 +321,10 @@ class FusedMBConv(nn.Layer):
 class ResidualBlock(nn.Layer):
     def __init__(
         self,
-        main: nn.Layer or None,
-        shortcut: nn.Layer or None,
-        post_act=None,
-        pre_norm: nn.Layer or None = None,
+        main: Optional[nn.Layer],
+        shortcut: Optional[nn.Layer],
+        post_act: str = None,
+        pre_norm: Optional[nn.Layer] = None,
     ):
         super(ResidualBlock, self).__init__()
 
@@ -358,7 +356,7 @@ class DAGBlock(nn.Layer):
         self,
         inputs: Dict[str, nn.Layer],
         merge: str,
-        post_input: nn.Layer or None,
+        post_input: Optional[nn.Layer],
         middle: nn.Layer,
         outputs: Dict[str, nn.Layer],
     ):
@@ -391,7 +389,7 @@ class DAGBlock(nn.Layer):
 
 
 class OpSequential(nn.Layer):
-    def __init__(self, op_list: List[nn.Layer or None]):
+    def __init__(self, op_list: List[Union[nn.Layer, None]]):
         super(OpSequential, self).__init__()
         valid_op_list = []
         for op in op_list:
