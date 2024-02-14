@@ -230,7 +230,7 @@ class HGV2_Act_Block(nn.Layer):
         total_channels = in_channels + layer_num * mid_channels
         self.aggregation_squeeze_conv = ConvLayer(
             in_channels=total_channels,
-            out_channels=out_channels // 2,
+            out_channels=out_channels,
             kernel_size=1,
             stride=1,
             norm=norm,
@@ -238,7 +238,7 @@ class HGV2_Act_Block(nn.Layer):
             use_lab=use_lab,
         )
         self.aggregation_excitation_conv = ConvLayer(
-            in_channels=out_channels // 2,
+            in_channels=out_channels,
             out_channels=out_channels,
             kernel_size=1,
             stride=1,
