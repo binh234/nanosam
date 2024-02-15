@@ -34,7 +34,7 @@ def filter_results_by_category_id(results, category_id):
 
 
 def compute_iou(results):
-    return sum(r["iou"] for r in results) * 100 / len(results)
+    return sum(r["iou"] for r in results) / len(results)
 
 
 if __name__ == "__main__":

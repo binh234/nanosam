@@ -54,7 +54,7 @@ def draw_box(box):
 def iou(mask_a, mask_b):
     intersection = np.count_nonzero(mask_a & mask_b)
     union = np.count_nonzero(mask_a | mask_b)
-    return intersection / union
+    return intersection / union * 100
 
 
 if __name__ == "__main__":
