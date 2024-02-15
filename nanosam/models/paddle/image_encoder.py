@@ -200,7 +200,9 @@ def Sam_PPHGNet_small(middle_op="hgv2", head_depth=6, expand_ratio=1, use_last_n
     return model
 
 
-def Sam_PPLCNetV2_small(middle_op="repdw", head_depth=2, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPLCNetV2_small(
+    middle_op="repdw", head_depth=2, expand_ratio=1, use_last_norm=True, **kwargs
+):
     backbone = PPLCNetV2Backbone_small(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
@@ -215,7 +217,9 @@ def Sam_PPLCNetV2_small(middle_op="repdw", head_depth=2, expand_ratio=1, use_las
     return model
 
 
-def Sam_PPLCNetV2_base(middle_op="repdw", head_depth=2, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPLCNetV2_base(
+    middle_op="repdw", head_depth=2, expand_ratio=1, use_last_norm=True, **kwargs
+):
     backbone = PPLCNetV2Backbone_base(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
@@ -230,7 +234,9 @@ def Sam_PPLCNetV2_base(middle_op="repdw", head_depth=2, expand_ratio=1, use_last
     return model
 
 
-def Sam_PPLCNetV2_large(middle_op="repdw", head_depth=4, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPLCNetV2_large(
+    middle_op="repdw", head_depth=4, expand_ratio=1, use_last_norm=True, **kwargs
+):
     backbone = PPLCNetV2Backbone_large(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
@@ -245,51 +251,60 @@ def Sam_PPLCNetV2_large(middle_op="repdw", head_depth=4, expand_ratio=1, use_las
     return model
 
 
-def Conv_PPHGNet_tiny(image_size=512, use_last_norm=False, **kwargs):
-    num_upsample = int(math.log2(2048 / image_size))
+def Conv_PPHGNet_tiny(use_last_norm=False, head_depth=3, **kwargs):
     backbone = PPHGNetBackbone_tiny(**kwargs)
     neck = ConvNeck(
         fid="stage_final",
         in_channels=768,
-        num_upsample=num_upsample,
-        num_conv_layers=3,
-        feature_dim=256,
+        head_depth=head_depth,
+        mid_channels=256,
+        out_channels=256,
         pos_embedding=True,
-        use_lab=False,
     )
 
     model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
     return model
 
 
-def Conv_PPHGNetV2_B1(image_size=512, use_last_norm=False, **kwargs):
-    num_upsample = int(math.log2(2048 / image_size))
+def Conv_PPHGNetV2_B1(use_last_norm=False, head_depth=3, **kwargs):
     backbone = PPHGNetV2Backbone_B1(**kwargs)
     neck = ConvNeck(
         fid="stage_final",
         in_channels=1024,
-        num_upsample=num_upsample,
-        num_conv_layers=3,
-        feature_dim=256,
+        head_depth=head_depth,
+        mid_channels=256,
+        out_channels=256,
         pos_embedding=True,
-        use_lab=True,
     )
 
     model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
     return model
 
 
-def Conv_PPLCNetV2_base(image_size=512, use_last_norm=False, **kwargs):
-    num_upsample = int(math.log2(2048 / image_size))
+def Conv_PPHGNetV2_B4(use_last_norm=False, head_depth=4, **kwargs):
+    backbone = PPHGNetV2Backbone_B4(**kwargs)
+    neck = ConvNeck(
+        fid="stage_final",
+        in_channels=2048,
+        head_depth=head_depth,
+        mid_channels=256,
+        out_channels=256,
+        pos_embedding=True,
+    )
+
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    return model
+
+
+def Conv_PPLCNetV2_base(use_last_norm=False, head_depth=3, **kwargs):
     backbone = PPLCNetV2Backbone_base(**kwargs)
     neck = ConvNeck(
         fid="stage_final",
         in_channels=1024,
-        num_upsample=num_upsample,
-        num_conv_layers=3,
-        feature_dim=256,
+        head_depth=head_depth,
+        mid_channels=256,
+        out_channels=256,
         pos_embedding=True,
-        use_lab=False,
     )
 
     model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)

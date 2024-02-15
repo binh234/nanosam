@@ -2,51 +2,38 @@ import paddle
 import paddle.nn as nn
 from typing import Dict
 
-from ..nn.ops import LearnableAffineBlock
+from ..nn.ops import UpSampleLayer
 
 
 class ConvNeck(nn.Layer):
     def __init__(
         self,
         in_channels: int,
-        num_upsample: int,
-        num_conv_layers: int = 3,
-        feature_dim: int = 256,
-        feature_shape: int = 64,
+        head_depth: int = 3,
+        mid_channels: int = 256,
         out_channels: int = 256,
+        feature_shape: int = 64,
         pos_embedding: bool = True,
         fid: str = "stage_final",
-        use_lab: bool = False,
         **kwargs,
     ):
         super().__init__()
         self.fid = fid
-        self.use_lab = use_lab
 
-        up_layers = []
-        for _ in range(num_conv_layers):
-            up_layers.append(nn.Conv2D(in_channels, out_channels, 3, padding=1))
-            up_layers.append(nn.GELU())
-            in_channels = out_channels
-
-        for _ in range(num_upsample):
-            up_layers.append(nn.Conv2DTranspose(out_channels, out_channels, 3, 2, 1, 1))
-            up_layers.append(nn.GELU())
-
-        self.up = nn.Sequential(*up_layers)
-
-        self.proj = nn.Sequential(
-            nn.Conv2D(out_channels, out_channels, 3, padding=1),
-            nn.GELU(),
-            nn.Conv2D(out_channels, feature_dim, 1, padding=0),
+        self.up = nn.Sequential(
+            nn.Conv2D(in_channels, mid_channels, 1, padding=0), UpSampleLayer(size=(feature_shape, feature_shape))
         )
 
-        if self.use_lab:
-            self.lab = LearnableAffineBlock()
+        proj_layers = []
+        for _ in range(head_depth):
+            proj_layers.append(nn.Conv2D(mid_channels, mid_channels, 3, padding=1))
+            proj_layers.append(nn.GELU())
+        proj_layers.append(nn.Conv2D(mid_channels, out_channels, 1, padding=0))
+        self.proj = nn.Sequential(*proj_layers)
 
         if pos_embedding:
             data = 1e-5 * paddle.randn(
-                (1, feature_dim, feature_shape, feature_shape), dtype="float32"
+                (1, out_channels, feature_shape, feature_shape), dtype="float32"
             )
             pos_embedding = paddle.create_parameter(
                 shape=data.shape,
@@ -60,8 +47,6 @@ class ConvNeck(nn.Layer):
     def forward(self, feed_dict: Dict[str, paddle.Tensor]):
         x = feed_dict[self.fid]
         x = self.up(x)
-        if self.use_lab:
-            x = self.lab(x)
         if self.pos_embedding is not None:
             x = x + self.pos_embedding
         x = self.proj(x)
