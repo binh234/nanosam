@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     results = []
     image_ids = coco.getImgIds()
-    prog_bar = tqdm(enumerate(image_ids))
+    prog_bar = tqdm(enumerate(image_ids), total=len(image_ids))
 
     for step, img_id in prog_bar:
         image_data = coco.loadImgs(img_id)[0]
@@ -138,6 +138,7 @@ if __name__ == "__main__":
 
     metric_dict = compute_miou_metric(results)
     prog_bar.set_postfix(metric_dict)
+    print(", ".join([f"{key}={val:.3f}" for key, val in metric_dict.items()]))
     prog_bar.close()
 
     with open(args.output, "w") as f:

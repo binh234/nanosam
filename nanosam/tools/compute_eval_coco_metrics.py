@@ -34,7 +34,7 @@ def filter_results_by_category_id(results, category_id):
 
 
 def compute_iou(results):
-    return sum(r["iou"] for r in results) / len(results)
+    return sum(r["iou"] for r in results) / len(results) if len(results) else 0
 
 
 def compute_miou_metric(results, category_id=None, size="all"):
