@@ -129,7 +129,7 @@ class LightConvLayer(nn.Layer):
             out_channels=out_channels,
             kernel_size=1,
             norm=norm,
-            act_func=act_func,
+            act_func=None,
             use_lab=use_lab,
         )
         self.conv2 = ConvLayer(
