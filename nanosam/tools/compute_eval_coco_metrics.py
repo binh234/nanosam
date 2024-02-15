@@ -37,6 +37,30 @@ def compute_iou(results):
     return sum(r["iou"] for r in results) / len(results)
 
 
+def compute_miou_metric(results, category_id=None, size="all"):
+    if category_id is not None:
+        results = filter_results_by_category_id(results, category_id)
+
+    size_dict = {
+        "small": [None, 32**2],
+        "medium": [32**2, 96**2],
+        "large": [96**2, None],
+    }
+    if size in size_dict:
+        results = filter_results_by_area(results, *size_dict[size])
+
+    metric_dict = {}
+    metric_dict[size] = compute_iou(results)
+
+    if size == "all":
+        for name, size_range in size_dict.items():
+            results_filtered = filter_results_by_area(results, *size_range)
+            miou_filtered = compute_iou(results_filtered)
+            metric_dict[name] = miou_filtered
+
+    return metric_dict
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("coco_results", type=str, default="data/mobile_sam_coco_results.json")
@@ -51,23 +75,6 @@ if __name__ == "__main__":
     with open(args.coco_results, "r") as f:
         results = json.load(f)
 
-    if args.category_id is not None:
-        results = filter_results_by_category_id(results, args.category_id)
-
-    if args.size == "small":
-        results = filter_results_by_area(results, None, 32**2)
-    elif args.size == "medium":
-        results = filter_results_by_area(results, 32**2, 96**2)
-    elif args.size == "large":
-        results = filter_results_by_area(results, 96**2, None)
-
-    miou = compute_iou(results)
-    print(f"mIOU {args.size}: {miou:.3f}")
-
-    if args.size == "all":
-        size_names = ["small", "medium", "large"]
-        size_areas = [None, 32**2, 96**2, None]
-        for i, name in enumerate(size_names):
-            results_filtered = filter_results_by_area(results, size_areas[i], size_areas[i + 1])
-            miou_filtered = compute_iou(results_filtered)
-            print(f"mIOU {name}: {miou_filtered:.3f}")
+    metric_dict = compute_miou_metric(results, category_id=args.category_id, size=args.size)
+    for name, miou in metric_dict:
+        print(f"mIoU {name}: {miou:.3f}")

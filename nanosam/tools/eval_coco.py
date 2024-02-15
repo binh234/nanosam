@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 from pycocotools.coco import COCO
 
 from nanosam.utils import PROVIDERS_DICT, Predictor, get_provider_options
+from nanosam.tools.compute_eval_coco_metrics import compute_miou_metric
 
 import argparse
 import json
@@ -64,9 +65,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ann_file", type=str, default="data/coco/annotations/instances_val2017.json"
     )
-    parser.add_argument("--image_encoder", type=str, default="data/mobile_sam_image_encoder.onnx")
-    parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.onnx")
-    parser.add_argument("--output", type=str, default="data/mobile_sam_coco_results.json")
+    parser.add_argument("--image_encoder", type=str, required=True)
+    parser.add_argument("--mask_decoder", type=str, required=True)
+    parser.add_argument("--output", type=str, required=True)
+    parser.add_argument("--log_step", type=int, default=200)
     parser.add_argument(
         "--provider",
         type=str,
@@ -93,8 +95,9 @@ if __name__ == "__main__":
 
     results = []
     image_ids = coco.getImgIds()
+    prog_bar = tqdm(enumerate(image_ids))
 
-    for img_id in tqdm(image_ids):
+    for step, img_id in prog_bar:
         image_data = coco.loadImgs(img_id)[0]
         if args.data_root is not None:
             image_path = osp.join(args.data_root, args.img_dir, image_data["file_name"])
@@ -128,6 +131,14 @@ if __name__ == "__main__":
             }
 
             results.append(result)
+
+        if (step + 1) % args.log_step == 0:
+            metric_dict = compute_miou_metric(results)
+            prog_bar.set_postfix(metric_dict)
+
+    metric_dict = compute_miou_metric(results)
+    prog_bar.set_postfix(metric_dict)
+    prog_bar.close()
 
     with open(args.output, "w") as f:
         json.dump(results, f)
