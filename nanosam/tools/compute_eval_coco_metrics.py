@@ -76,5 +76,5 @@ if __name__ == "__main__":
         results = json.load(f)
 
     metric_dict = compute_miou_metric(results, category_id=args.category_id, size=args.size)
-    for name, miou in metric_dict:
+    for name, miou in metric_dict.items():
         print(f"mIoU {name}: {miou:.3f}")
