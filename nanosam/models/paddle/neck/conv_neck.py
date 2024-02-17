@@ -2,13 +2,12 @@ import paddle
 import paddle.nn as nn
 from typing import Dict
 
-from ..nn.ops import UpSampleLayer
-
 
 class ConvNeck(nn.Layer):
     def __init__(
         self,
         in_channels: int,
+        num_upsample: int,
         head_depth: int = 3,
         mid_channels: int = 256,
         out_channels: int = 256,
@@ -20,16 +19,23 @@ class ConvNeck(nn.Layer):
         super().__init__()
         self.fid = fid
 
-        self.up = nn.Sequential(
-            nn.Conv2D(in_channels, mid_channels, 1, padding=0), UpSampleLayer(size=(feature_shape, feature_shape))
-        )
-
-        proj_layers = []
+        up_layers = []
         for _ in range(head_depth):
-            proj_layers.append(nn.Conv2D(mid_channels, mid_channels, 3, padding=1))
-            proj_layers.append(nn.GELU())
-        proj_layers.append(nn.Conv2D(mid_channels, out_channels, 1, padding=0))
-        self.proj = nn.Sequential(*proj_layers)
+            up_layers.append(nn.Conv2D(in_channels, mid_channels, 3, padding=1))
+            up_layers.append(nn.GELU())
+            in_channels = mid_channels
+
+        for _ in range(num_upsample):
+            up_layers.append(nn.Conv2DTranspose(mid_channels, mid_channels, 3, 2, 1, 1))
+            up_layers.append(nn.GELU())
+
+        self.up = nn.Sequential(*up_layers)
+
+        self.proj = nn.Sequential(
+            nn.Conv2D(mid_channels, mid_channels, 3, padding=1),
+            nn.GELU(),
+            nn.Conv2D(mid_channels, out_channels, 1, padding=0),
+        )
 
         if pos_embedding:
             data = 1e-5 * paddle.randn(

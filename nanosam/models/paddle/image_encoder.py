@@ -251,11 +251,13 @@ def Sam_PPLCNetV2_large(
     return model
 
 
-def Conv_PPHGNet_tiny(use_last_norm=False, head_depth=3, **kwargs):
+def Conv_PPHGNet_tiny(image_size=512, use_last_norm=False, head_depth=3, **kwargs):
+    num_upsample = int(math.log2(2048 / image_size))
     backbone = PPHGNetBackbone_tiny(**kwargs)
     neck = ConvNeck(
         fid="stage_final",
         in_channels=768,
+        num_upsample=num_upsample,
         head_depth=head_depth,
         mid_channels=256,
         out_channels=256,
@@ -266,11 +268,13 @@ def Conv_PPHGNet_tiny(use_last_norm=False, head_depth=3, **kwargs):
     return model
 
 
-def Conv_PPHGNetV2_B1(use_last_norm=False, head_depth=3, **kwargs):
+def Conv_PPHGNetV2_B1(image_size=512, use_last_norm=False, head_depth=3, **kwargs):
+    num_upsample = int(math.log2(2048 / image_size))
     backbone = PPHGNetV2Backbone_B1(**kwargs)
     neck = ConvNeck(
         fid="stage_final",
         in_channels=1024,
+        num_upsample=num_upsample,
         head_depth=head_depth,
         mid_channels=256,
         out_channels=256,
@@ -281,11 +285,13 @@ def Conv_PPHGNetV2_B1(use_last_norm=False, head_depth=3, **kwargs):
     return model
 
 
-def Conv_PPHGNetV2_B4(use_last_norm=False, head_depth=4, **kwargs):
+def Conv_PPHGNetV2_B4(image_size=512, use_last_norm=False, head_depth=4, **kwargs):
+    num_upsample = int(math.log2(2048 / image_size))
     backbone = PPHGNetV2Backbone_B4(**kwargs)
     neck = ConvNeck(
         fid="stage_final",
         in_channels=2048,
+        num_upsample=num_upsample,
         head_depth=head_depth,
         mid_channels=256,
         out_channels=256,
@@ -296,11 +302,13 @@ def Conv_PPHGNetV2_B4(use_last_norm=False, head_depth=4, **kwargs):
     return model
 
 
-def Conv_PPLCNetV2_base(use_last_norm=False, head_depth=3, **kwargs):
+def Conv_PPLCNetV2_base(image_size=512, use_last_norm=False, head_depth=3, **kwargs):
+    num_upsample = int(math.log2(2048 / image_size))
     backbone = PPLCNetV2Backbone_base(**kwargs)
     neck = ConvNeck(
         fid="stage_final",
         in_channels=1024,
+        num_upsample=num_upsample,
         head_depth=head_depth,
         mid_channels=256,
         out_channels=256,
