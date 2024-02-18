@@ -1,5 +1,4 @@
 import numpy as np
-import cv2
 import torch
 
 import argparse
@@ -64,27 +63,29 @@ class TrtModel:
         return out
 
 
+def get_preprocess_shape(img_h: int, img_w: int, size: int = 512):
+    percent = float(size) / max(img_w, img_h)
+    new_h = int(round(img_h * percent))
+    new_w = int(round(img_w * percent))
+    return new_h, new_w
+
+
 def preprocess_image(image, size: int = 512):
-    if not isinstance(image, np.ndarray):
-        image = np.asarray(image)
+    if isinstance(image, np.ndarray):
+        image = Image.fromarray(image)
 
     image_mean = np.asarray([123.675, 116.28, 103.53])[:, None, None]
     image_std = np.asarray([58.395, 57.12, 57.375])[:, None, None]
 
-    height, width = image.shape[:2]
-    aspect_ratio = width / height
-    if aspect_ratio >= 1:
-        resize_width = size
-        resize_height = int(size / aspect_ratio)
-    else:
-        resize_height = size
-        resize_width = int(size * aspect_ratio)
+    width, height = image.size
+    resize_height, resize_width = get_preprocess_shape(height, width, size)
 
-    image_np_resized = cv2.resize(np.asarray(image), (resize_width, resize_height))
-    image_np_resized = np.transpose(image_np_resized, (2, 0, 1))
-    image_np_resized_normalized = (image_np_resized - image_mean) / image_std
-    image_tensor = np.zeros((3, size, size), dtype=np.float32)
-    image_tensor[:, :resize_height, :resize_width] = image_np_resized_normalized
+    image_resized = image.resize((resize_width, resize_height), resample=Image.BILINEAR)
+    image_resized = np.asarray(image_resized)
+    image_resized = np.transpose(image_resized, (2, 0, 1))
+    image_resized_normalized = (image_resized - image_mean) / image_std
+    image_tensor = np.zeros((1, 3, size, size), dtype=np.float32)
+    image_tensor[0, :, :resize_height, :resize_width] = image_resized_normalized
 
     return image_tensor
 
@@ -168,7 +169,7 @@ if __name__ == "__main__":
             basename = os.path.basename(image_path)
             filename, image_ext = os.path.splitext(basename)
             if image_ext in IMG_EXTENSIONS:
-                image = np.asarray(Image.open(image_path).convert("RGB"))
+                image = Image.open(image_path).convert("RGB")
                 image = preprocess_image(image, args.image_size)
                 batch_images.append(image)
                 batch_filenames.append(filename)
