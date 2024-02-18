@@ -168,7 +168,8 @@ if __name__ == "__main__":
         try:
             basename = os.path.basename(image_path)
             filename, image_ext = os.path.splitext(basename)
-            if image_ext in IMG_EXTENSIONS:
+            save_path = os.path.join(args.out_dir, filename + ".npy")
+            if image_ext in IMG_EXTENSIONS and not os.path.exists(save_path):
                 image = Image.open(image_path).convert("RGB")
                 image = preprocess_image(image, args.image_size)
                 batch_images.append(image)
