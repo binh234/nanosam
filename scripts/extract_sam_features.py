@@ -58,8 +58,8 @@ if __name__ == "__main__":
         "--model_type",
         type=str,
         default="vit_h",
-        choices=["default", "vit_h", "vit_l", "vit_b", "l0", "l1", "l2"],
-        help="In ['default', 'vit_h', 'vit_l', 'vit_b', 'l0', 'l1', 'l2']. Which type of SAM model to export.",
+        choices=["default", "vit_h", "vit_l", "vit_b", "l0", "l1", "l2", "xl0", "xl1"],
+        help="In ['default', 'vit_h', 'vit_l', 'vit_b', 'l0', 'l1', 'l2', 'xl0', 'xl1']. Which type of SAM model to export.",
     )
     parser.add_argument(
         "--fp16",
@@ -70,10 +70,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    if args.model_type in ["l0", "l1", "l2"]:
-        predictor = build_efficientvit_sam(args.model_type, args.checkpoint, device)
-    else:
+    if args.model_type in ["default", "vit_h", "vit_l", "vit_b"]:
         predictor = build_sam(args.model_type, args.checkpoint, device)
+    else:
+        predictor = build_efficientvit_sam(args.model_type, args.checkpoint, device)
 
     os.makedirs(args.out_dir, exist_ok=True)
     image_paths = glob.iglob(os.path.join(args.img_dir, "*"))
