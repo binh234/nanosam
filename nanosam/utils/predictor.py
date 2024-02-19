@@ -16,32 +16,35 @@
 import numpy as np
 import cv2
 
+from PIL import Image
 from typing import Any
 
 from .onnx_model import OnnxModel
 
 
+def get_preprocess_shape(img_h: int, img_w: int, size: int = 512):
+    scale = float(size) / max(img_w, img_h)
+    new_h = int(round(img_h * scale))
+    new_w = int(round(img_w * scale))
+    return new_h, new_w
+
+
 def preprocess_image(image, size: int = 512):
-    if not isinstance(image, np.ndarray):
-        image = np.asarray(image)
+    if isinstance(image, np.ndarray):
+        image = Image.fromarray(image)
 
     image_mean = np.asarray([123.675, 116.28, 103.53])[:, None, None]
     image_std = np.asarray([58.395, 57.12, 57.375])[:, None, None]
 
-    height, width = image.shape[:2]
-    aspect_ratio = width / height
-    if aspect_ratio >= 1:
-        resize_width = size
-        resize_height = int(size / aspect_ratio)
-    else:
-        resize_height = size
-        resize_width = int(size * aspect_ratio)
+    width, height = image.size
+    resize_height, resize_width = get_preprocess_shape(height, width, size)
 
-    image_np_resized = cv2.resize(image, (resize_width, resize_height))
-    image_np_resized = np.transpose(image_np_resized, (2, 0, 1))
-    image_np_resized_normalized = (image_np_resized - image_mean) / image_std
+    image_resized = image.resize((resize_width, resize_height), resample=Image.BILINEAR)
+    image_resized = np.asarray(image_resized)
+    image_resized = np.transpose(image_resized, (2, 0, 1))
+    image_resized_normalized = (image_resized - image_mean) / image_std
     image_tensor = np.zeros((1, 3, size, size), dtype=np.float32)
-    image_tensor[0, :, :resize_height, :resize_width] = image_np_resized_normalized
+    image_tensor[0, :, :resize_height, :resize_width] = image_resized_normalized
 
     return image_tensor
 
@@ -74,7 +77,7 @@ def run_mask_decoder(mask_decoder, features, points=None, point_labels=None, mas
 
 
 def upscale_mask(mask, image_shape, size=256, interpolation=cv2.INTER_LINEAR):
-    """_summary_
+    """
 
     Args:
         mask (np.ndarray): Input mask with shape [B, C, H, W]
@@ -84,12 +87,7 @@ def upscale_mask(mask, image_shape, size=256, interpolation=cv2.INTER_LINEAR):
     Returns:
         (np.ndarray): Upscaled mask
     """
-    if image_shape[1] > image_shape[0]:
-        lim_x = size
-        lim_y = int(size * image_shape[0] / image_shape[1])
-    else:
-        lim_x = int(size * image_shape[1] / image_shape[0])
-        lim_y = size
+    lim_y, lim_x = get_preprocess_shape(image_shape[0], image_shape[1], size)
 
     bs = mask.shape[0]
     mask = np.transpose(mask[:, :, :lim_y, :lim_x], (2, 3, 0, 1)).reshape(lim_y, lim_x, -1)

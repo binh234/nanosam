@@ -83,7 +83,7 @@ if __name__ == "__main__":
             filename, image_ext = os.path.splitext(basename)
             save_path = os.path.join(args.out_dir, filename + ".npy")
             if image_ext in IMG_EXTENSIONS and not os.path.exists(save_path):
-                image = np.asarray(Image.open(image_path).convert("RGB"))
+                image = np.array(Image.open(image_path).convert("RGB"))
 
                 predictor.set_image(image)
                 features = predictor.features
