@@ -17,7 +17,7 @@ def download_and_extract_tar_file(url, path, name=None):
 def download_sa1b_chunk_txt(directory, filename="data_urls.txt"):
     path = os.path.join(directory, filename)
     if not os.path.exists(path):
-        txt_url = "https://scontent.fsgn5-6.fna.fbcdn.net/m1/v/t6/An8MNcSV8eixKBYJ2kyw6sfPh-J9U4tH2BV7uPzibNa0pu4uHi6fyXdlbADVO4nfvsWpTwR8B0usCARHTz33cBQNrC0kWZsD1MbBWjw.txt?ccb=10-5&oh=00_AfAh6HfOXvjS7AE8ocKiKk2uaYla9-hGn2TdD-oGIjhzzQ&oe=65D6B798&_nc_sid=0fdd51"
+        txt_url = "https://scontent.fdad3-5.fna.fbcdn.net/m1/v/t6/An8MNcSV8eixKBYJ2kyw6sfPh-J9U4tH2BV7uPzibNa0pu4uHi6fyXdlbADVO4nfvsWpTwR8B0usCARHTz33cBQNrC0kWZsD1MbBWjw.txt?ccb=10-5&oh=00_AfAi8iehqNiWgKRGR_0Cmkf-GD2zeyY2Ksou9iBvd_wAQg&oe=65FF5DD8&_nc_sid=0fdd51"
         response = requests.get(txt_url, stream=True)
         with open(path, mode="wb") as f:
             for chunk in response.raw.stream(1024, decode_content=False):
