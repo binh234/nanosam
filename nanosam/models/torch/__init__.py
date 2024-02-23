@@ -15,12 +15,5 @@
 
 
 from .registry import create_model, list_models
-from .timm_image_encoder import (
-    TimmImageEncoder,
-    resnet18,
-    resnet34,
-    resnet50,
-    efficientvit_b0,
-    efficientvit_b1,
-    efficientvit_m5,
-)
+from .timm_image_encoder import *
+from .sam_image_encoder import *
