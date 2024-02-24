@@ -225,7 +225,7 @@ class Engine(object):
         }
         ema_module = None
         if self.ema:
-            best_metric_ema = 0.0
+            best_metric_ema = float("inf")
             ema_module = self.model_ema.module
         # key:
         # val: metrics list word
@@ -300,16 +300,16 @@ class Engine(object):
 
                 if self.ema:
                     ori_model, self.model = self.model, ema_module
-                    acc_ema = self.eval(epoch_id, is_ema=True)
+                    loss_ema = self.eval(epoch_id, is_ema=True)
                     self.model = ori_model
                     ema_module.eval()
 
-                    if acc_ema > best_metric_ema:
-                        best_metric_ema = acc_ema
+                    if loss_ema < best_metric_ema:
+                        best_metric_ema = loss_ema
                         self.checkpointer.save_checkpoint(
                             ema_module,
                             None,
-                            {"metric": acc_ema, "epoch": epoch_id},
+                            {"metric": loss_ema, "epoch": epoch_id},
                             ema=None,
                             prefix="best_model.ema",
                             loss=self.train_loss_func,
@@ -318,7 +318,7 @@ class Engine(object):
                         "[Eval][Epoch {}][best metric ema: {}]".format(epoch_id, best_metric_ema)
                     )
                     logger.scaler(
-                        name="eval_loss_ema", value=acc_ema, step=epoch_id, writer=self.vdl_writer
+                        name="eval_loss_ema", value=loss_ema, step=epoch_id, writer=self.vdl_writer
                     )
 
             # save model
