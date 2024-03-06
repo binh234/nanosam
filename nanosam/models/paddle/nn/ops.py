@@ -302,7 +302,7 @@ class LearnableRepLayer(nn.Layer):
     def _fuse_bn_tensor(self, branch):
         if not branch:
             return 0, 0
-        elif isinstance(branch, ConvLayer):
+        elif isinstance(branch, ConvBNLayer):
             kernel = branch.conv.weight
             running_mean = branch.bn._mean
             running_var = branch.bn._variance
