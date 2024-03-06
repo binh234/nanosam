@@ -2,7 +2,7 @@ from ppcls.arch.backbone.legendary_models.pp_hgnet_v2 import HGV2_Block
 from ppcls.arch.backbone.legendary_models.pp_lcnet_v2 import RepDepthwiseSeparable
 from typing import List
 
-from ..nn.ops import ConvLayer, DAGBlock, FusedMBConv, OpSequential, UpSampleLayer, HGV2_Act_Block
+from ..nn.ops import ConvLayer, DAGBlock, FusedMBConv, OpSequential, UpSampleLayer, HGV2_Act_Block, LCNetV3Block
 
 
 class SamNeck(DAGBlock):
@@ -12,6 +12,7 @@ class SamNeck(DAGBlock):
         in_channel_list: List[int],
         head_width: int,
         head_depth: int,
+        num_block: int,
         expand_ratio: float,
         middle_op: str,
         out_dim: int = 256,
@@ -31,9 +32,9 @@ class SamNeck(DAGBlock):
                 ]
             )
 
-        if middle_op == "fmbconv":
+        if middle_op == "fmb":
             middle = []
-            for i in range(head_depth):
+            for _ in range(head_depth):
                 block = FusedMBConv(
                     head_width,
                     head_width,
@@ -59,30 +60,54 @@ class SamNeck(DAGBlock):
                 )
                 middle.append(block)
             middle = OpSequential(middle)
+        elif middle_op == "lcv3":
+            layer_num = head_depth // num_block
+            middle = []
+            for _ in range(num_block):
+                block = LCNetV3Block(
+                    in_channels=head_width,
+                    out_channels=head_width,
+                    conv_kxk_num=layer_num,
+                    stride=1,
+                    dw_size=5,
+                    use_se=False,
+                )
+                middle.append(block)
+            middle = OpSequential(middle)
         elif middle_op == "hgv2_act":
-            middle = HGV2_Act_Block(
-                in_channels=head_width,
-                mid_channels=round(head_width * expand_ratio),
-                out_channels=head_width,
-                kernel_size=3,
-                layer_num=head_depth,
-                identity=True,
-                light_block=True,
-                norm=norm,
-                act_func=act_func,
-                use_lab=use_lab,
-            )
+            layer_num = head_depth // num_block
+            middle = []
+            for _ in range(num_block):
+                block = HGV2_Act_Block(
+                    in_channels=head_width,
+                    mid_channels=round(head_width * expand_ratio),
+                    out_channels=head_width,
+                    kernel_size=3,
+                    layer_num=head_depth,
+                    identity=True,
+                    light_block=True,
+                    norm=norm,
+                    act_func=act_func,
+                    use_lab=use_lab,
+                )
+                middle.append(block)
+            middle = OpSequential(middle)
         elif middle_op == "hgv2":
-            middle = HGV2_Block(
-                in_channels=head_width,
-                mid_channels=round(head_width * expand_ratio),
-                out_channels=head_width,
-                kernel_size=3,
-                layer_num=head_depth,
-                identity=True,
-                light_block=True,
-                use_lab=use_lab,
-            )
+            layer_num = head_depth // num_block
+            middle = []
+            for _ in range(num_block):
+                block = HGV2_Block(
+                    in_channels=head_width,
+                    mid_channels=round(head_width * expand_ratio),
+                    out_channels=head_width,
+                    kernel_size=3,
+                    layer_num=head_depth,
+                    identity=True,
+                    light_block=True,
+                    use_lab=use_lab,
+                )
+                middle.append(block)
+            middle = OpSequential(middle)
         else:
             raise NotImplementedError
 

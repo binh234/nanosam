@@ -58,13 +58,16 @@ class ImageEncoder(nn.Layer):
         return out
 
 
-def Sam_PPHGNetV2_B0(middle_op="hgv2", head_depth=4, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPHGNetV2_B0(
+    middle_op="hgv2", head_depth=4, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+):
     backbone = PPHGNetV2Backbone_B0(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
         in_channel_list=[1024, 512, 256],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
         use_lab=True,
@@ -74,13 +77,16 @@ def Sam_PPHGNetV2_B0(middle_op="hgv2", head_depth=4, expand_ratio=1, use_last_no
     return model
 
 
-def Sam_PPHGNetV2_B1(middle_op="hgv2", head_depth=4, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPHGNetV2_B1(
+    middle_op="hgv2", head_depth=4, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+):
     backbone = PPHGNetV2Backbone_B1(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
         in_channel_list=[1024, 512, 256],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
         use_lab=True,
@@ -90,13 +96,16 @@ def Sam_PPHGNetV2_B1(middle_op="hgv2", head_depth=4, expand_ratio=1, use_last_no
     return model
 
 
-def Sam_PPHGNetV2_B2(middle_op="hgv2", head_depth=4, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPHGNetV2_B2(
+    middle_op="hgv2", head_depth=4, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+):
     backbone = PPHGNetV2Backbone_B2(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
         in_channel_list=[1536, 768, 384],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
         use_lab=True,
@@ -106,13 +115,16 @@ def Sam_PPHGNetV2_B2(middle_op="hgv2", head_depth=4, expand_ratio=1, use_last_no
     return model
 
 
-def Sam_PPHGNetV2_B3(middle_op="hgv2", head_depth=5, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPHGNetV2_B3(
+    middle_op="hgv2", head_depth=5, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+):
     backbone = PPHGNetV2Backbone_B3(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
         in_channel_list=[2048, 1024, 512],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
         use_lab=True,
@@ -122,13 +134,16 @@ def Sam_PPHGNetV2_B3(middle_op="hgv2", head_depth=5, expand_ratio=1, use_last_no
     return model
 
 
-def Sam_PPHGNetV2_B4(middle_op="hgv2", head_depth=6, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPHGNetV2_B4(
+    middle_op="hgv2", head_depth=6, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+):
     backbone = PPHGNetV2Backbone_B4(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
         in_channel_list=[2048, 1024, 512],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
         use_lab=False,
@@ -138,13 +153,16 @@ def Sam_PPHGNetV2_B4(middle_op="hgv2", head_depth=6, expand_ratio=1, use_last_no
     return model
 
 
-def Sam_PPHGNetV2_B5(middle_op="hgv2", head_depth=6, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPHGNetV2_B5(
+    middle_op="hgv2", head_depth=6, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+):
     backbone = PPHGNetV2Backbone_B5(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
         in_channel_list=[2048, 1024, 512],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
         use_lab=False,
@@ -154,13 +172,16 @@ def Sam_PPHGNetV2_B5(middle_op="hgv2", head_depth=6, expand_ratio=1, use_last_no
     return model
 
 
-def Sam_PPHGNetV2_B6(middle_op="hgv2", head_depth=6, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPHGNetV2_B6(
+    middle_op="hgv2", head_depth=6, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+):
     backbone = PPHGNetV2Backbone_B6(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
         in_channel_list=[2048, 1024, 512],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
         use_lab=False,
@@ -170,13 +191,16 @@ def Sam_PPHGNetV2_B6(middle_op="hgv2", head_depth=6, expand_ratio=1, use_last_no
     return model
 
 
-def Sam_PPHGNet_tiny(middle_op="hgv2", head_depth=4, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPHGNet_tiny(
+    middle_op="hgv2", head_depth=4, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+):
     backbone = PPHGNetBackbone_tiny(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
         in_channel_list=[768, 512, 448],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
     )
@@ -185,13 +209,16 @@ def Sam_PPHGNet_tiny(middle_op="hgv2", head_depth=4, expand_ratio=1, use_last_no
     return model
 
 
-def Sam_PPHGNet_small(middle_op="hgv2", head_depth=6, expand_ratio=1, use_last_norm=True, **kwargs):
+def Sam_PPHGNet_small(
+    middle_op="hgv2", head_depth=6, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+):
     backbone = PPHGNetBackbone_small(**kwargs)
     neck = SamNeck(
         fid_list=["stage4", "stage3", "stage2"],
         in_channel_list=[1024, 768, 512],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
     )
@@ -201,7 +228,7 @@ def Sam_PPHGNet_small(middle_op="hgv2", head_depth=6, expand_ratio=1, use_last_n
 
 
 def Sam_PPLCNetV2_small(
-    middle_op="repdw", head_depth=2, expand_ratio=1, use_last_norm=True, **kwargs
+    middle_op="repdw", head_depth=4, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
 ):
     backbone = PPLCNetV2Backbone_small(**kwargs)
     neck = SamNeck(
@@ -209,6 +236,7 @@ def Sam_PPLCNetV2_small(
         in_channel_list=[768, 384, 192],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
     )
@@ -218,7 +246,7 @@ def Sam_PPLCNetV2_small(
 
 
 def Sam_PPLCNetV2_base(
-    middle_op="repdw", head_depth=2, expand_ratio=1, use_last_norm=True, **kwargs
+    middle_op="repdw", head_depth=4, expand_ratio=1, num_block=1, use_last_norm=True, **kwargs
 ):
     backbone = PPLCNetV2Backbone_base(**kwargs)
     neck = SamNeck(
@@ -226,6 +254,7 @@ def Sam_PPLCNetV2_base(
         in_channel_list=[1024, 512, 256],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
     )
@@ -235,7 +264,7 @@ def Sam_PPLCNetV2_base(
 
 
 def Sam_PPLCNetV2_large(
-    middle_op="repdw", head_depth=4, expand_ratio=1, use_last_norm=True, **kwargs
+    middle_op="repdw", head_depth=8, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
 ):
     backbone = PPLCNetV2Backbone_large(**kwargs)
     neck = SamNeck(
@@ -243,6 +272,7 @@ def Sam_PPLCNetV2_large(
         in_channel_list=[1280, 640, 320],
         head_width=256,
         head_depth=head_depth,
+        num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
     )

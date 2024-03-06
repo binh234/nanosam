@@ -46,6 +46,37 @@ class LearnableAffineBlock(nn.Layer):
     def forward(self, x):
         return self.scale * x + self.bias
 
+class ConvBNLayer(nn.Layer):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size,
+                 stride,
+                 groups=1,
+                 lr_mult=1.0):
+        super().__init__()
+        self.conv = nn.Conv2D(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=(kernel_size - 1) // 2,
+            groups=groups,
+            weight_attr=ParamAttr(
+                initializer=KaimingNormal(), learning_rate=lr_mult),
+            bias_attr=False)
+
+        self.bn = nn.BatchNorm2D(
+            out_channels,
+            weight_attr=ParamAttr(
+                regularizer=L2Decay(0.0), learning_rate=lr_mult),
+            bias_attr=ParamAttr(
+                regularizer=L2Decay(0.0), learning_rate=lr_mult))
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        return x
 
 class ConvLayer(nn.Layer):
     def __init__(
@@ -145,6 +176,194 @@ class LightConvLayer(nn.Layer):
     def forward(self, x):
         x = self.conv1(x)
         x = self.conv2(x)
+        return x
+
+
+class LearnableRepLayer(nn.Layer):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        groups=1,
+        num_conv_branches=1,
+        lr_mult=1.0,
+        lab_lr=0.1,
+        act_func="relu",
+    ):
+        super().__init__()
+        self.is_repped = False
+        self.groups = groups
+        self.stride = stride
+        self.kernel_size = kernel_size
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.num_conv_branches = num_conv_branches
+        self.padding = (kernel_size - 1) // 2
+
+        self.identity = (
+            nn.BatchNorm2D(
+                num_features=in_channels,
+                weight_attr=ParamAttr(learning_rate=lr_mult),
+                bias_attr=ParamAttr(learning_rate=lr_mult),
+            )
+            if out_channels == in_channels and stride == 1
+            else None
+        )
+
+        self.conv_kxk = nn.LayerList(
+            [
+                ConvBNLayer(
+                    in_channels,
+                    out_channels,
+                    kernel_size,
+                    stride,
+                    groups=groups,
+                    lr_mult=lr_mult,
+                )
+                for _ in range(self.num_conv_branches)
+            ]
+        )
+
+        self.conv_1x1 = (
+            ConvBNLayer(
+                in_channels, out_channels, 1, stride, groups=groups, lr_mult=lr_mult
+            )
+            if kernel_size > 1
+            else None
+        )
+
+        self.lab = LearnableAffineBlock(lr_mult=lr_mult, lab_lr=lab_lr)
+        self.act = build_act(act_func)
+
+    def forward(self, x):
+        # for export
+        if self.is_repped:
+            out = self.lab(self.reparam_conv(x))
+            if self.stride != 2 and self.act:
+                out = self.act(out)
+            return out
+
+        out = 0
+        if self.identity is not None:
+            out += self.identity(x)
+
+        if self.conv_1x1 is not None:
+            out += self.conv_1x1(x)
+
+        for conv in self.conv_kxk:
+            out += conv(x)
+
+        out = self.lab(out)
+        if self.stride != 2 and self.act:
+            out = self.act(out)
+        return out
+
+    def re_parameterize(self):
+        if self.is_repped:
+            return
+        kernel, bias = self._get_kernel_bias()
+        self.reparam_conv = nn.Conv2D(
+            in_channels=self.in_channels,
+            out_channels=self.out_channels,
+            kernel_size=self.kernel_size,
+            stride=self.stride,
+            padding=self.padding,
+            groups=self.groups,
+        )
+        self.reparam_conv.weight.set_value(kernel)
+        self.reparam_conv.bias.set_value(bias)
+        self.is_repped = True
+
+    def _pad_kernel_1x1_to_kxk(self, kernel1x1, pad):
+        if not isinstance(kernel1x1, paddle.Tensor):
+            return 0
+        else:
+            return nn.functional.pad(kernel1x1, [pad, pad, pad, pad])
+
+    def _get_kernel_bias(self):
+        kernel_conv_1x1, bias_conv_1x1 = self._fuse_bn_tensor(self.conv_1x1)
+        kernel_conv_1x1 = self._pad_kernel_1x1_to_kxk(kernel_conv_1x1, self.kernel_size // 2)
+
+        kernel_identity, bias_identity = self._fuse_bn_tensor(self.identity)
+
+        kernel_conv_kxk = 0
+        bias_conv_kxk = 0
+        for conv in self.conv_kxk:
+            kernel, bias = self._fuse_bn_tensor(conv)
+            kernel_conv_kxk += kernel
+            bias_conv_kxk += bias
+
+        kernel_reparam = kernel_conv_kxk + kernel_conv_1x1 + kernel_identity
+        bias_reparam = bias_conv_kxk + bias_conv_1x1 + bias_identity
+        return kernel_reparam, bias_reparam
+
+    def _fuse_bn_tensor(self, branch):
+        if not branch:
+            return 0, 0
+        elif isinstance(branch, ConvLayer):
+            kernel = branch.conv.weight
+            running_mean = branch.bn._mean
+            running_var = branch.bn._variance
+            gamma = branch.bn.weight
+            beta = branch.bn.bias
+            eps = branch.bn._epsilon
+        else:
+            assert isinstance(branch, nn.BatchNorm2D)
+            if not hasattr(self, "id_tensor"):
+                input_dim = self.in_channels // self.groups
+                kernel_value = paddle.zeros(
+                    (self.in_channels, input_dim, self.kernel_size, self.kernel_size),
+                    dtype=branch.weight.dtype,
+                )
+                for i in range(self.in_channels):
+                    kernel_value[i, i % input_dim, self.kernel_size // 2, self.kernel_size // 2] = 1
+                self.id_tensor = kernel_value
+            kernel = self.id_tensor
+            running_mean = branch._mean
+            running_var = branch._variance
+            gamma = branch.weight
+            beta = branch.bias
+            eps = branch._epsilon
+        std = (running_var + eps).sqrt()
+        t = (gamma / std).reshape((-1, 1, 1, 1))
+        return kernel * t, beta - running_mean * gamma / std
+
+
+class SELayer(nn.Layer):
+    def __init__(self, channel, reduction=4, lr_mult=1.0):
+        super().__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2D(1)
+        self.conv1 = nn.Conv2D(
+            in_channels=channel,
+            out_channels=channel // reduction,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            weight_attr=ParamAttr(learning_rate=lr_mult),
+            bias_attr=ParamAttr(learning_rate=lr_mult),
+        )
+        self.relu = nn.ReLU()
+        self.conv2 = nn.Conv2D(
+            in_channels=channel // reduction,
+            out_channels=channel,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            weight_attr=ParamAttr(learning_rate=lr_mult),
+            bias_attr=ParamAttr(learning_rate=lr_mult),
+        )
+        self.hardsigmoid = nn.Hardsigmoid()
+
+    def forward(self, x):
+        identity = x
+        x = self.avg_pool(x)
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.hardsigmoid(x)
+        x = paddle.multiply(x=identity, y=x)
         return x
 
 
@@ -259,6 +478,50 @@ class HGV2_Act_Block(nn.Layer):
         x = self.aggregation_excitation_conv(x)
         if self.identity:
             x += identity
+        return x
+
+
+class LCNetV3Block(nn.Layer):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        stride,
+        dw_size,
+        use_se=False,
+        conv_kxk_num=4,
+        lr_mult=1.0,
+        lab_lr=0.1,
+    ):
+        super().__init__()
+        self.use_se = use_se
+        self.dw_conv = LearnableRepLayer(
+            in_channels=in_channels,
+            out_channels=in_channels,
+            kernel_size=dw_size,
+            stride=stride,
+            groups=in_channels,
+            num_conv_branches=conv_kxk_num,
+            lr_mult=lr_mult,
+            lab_lr=lab_lr,
+        )
+        if use_se:
+            self.se = SELayer(in_channels, lr_mult=lr_mult)
+        self.pw_conv = LearnableRepLayer(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=1,
+            stride=1,
+            num_conv_branches=conv_kxk_num,
+            lr_mult=lr_mult,
+            lab_lr=lab_lr,
+        )
+
+    def forward(self, x):
+        x = self.dw_conv(x)
+        if self.use_se:
+            x = self.se(x)
+        x = self.pw_conv(x)
         return x
 
 
