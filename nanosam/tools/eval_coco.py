@@ -18,7 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pycocotools.coco import COCO
 
-from nanosam.utils import PROVIDERS_DICT, Predictor, get_provider_options
+from nanosam.utils import Predictor, get_config
 from nanosam.tools.compute_eval_coco_metrics import compute_miou_metric
 
 import argparse
@@ -65,24 +65,32 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ann_file", type=str, default="data/coco/annotations/instances_val2017.json"
     )
-    parser.add_argument("--image_encoder", type=str, required=True)
-    parser.add_argument("--mask_decoder", type=str, required=True)
-    parser.add_argument("--output", type=str, required=True)
-    parser.add_argument("--log_step", type=int, default=200)
     parser.add_argument(
-        "--provider",
+        "--encoder_cfg",
         type=str,
-        default="cpu",
-        choices=PROVIDERS_DICT.keys(),
+        required=True,
+        help="Path to image encoder config file",
     )
     parser.add_argument(
-        "-opt",
-        "--provider_options",
+        "--decoder_cfg",
+        type=str,
+        default="configs/inference/decoder.yaml",
+        help="Path to mask decoder config file",
+    )
+    parser.add_argument(
+        "--encoder_opt",
         type=str,
         nargs="+",
-        default=None,
-        help="Provider options for model to run",
+        help="Overridding config for image encoder",
     )
+    parser.add_argument(
+        "--decoder_opt",
+        type=str,
+        nargs="+",
+        help="Overridding config for mask decoder",
+    )
+    parser.add_argument("--output", type=str, required=True)
+    parser.add_argument("--log_step", type=int, default=200)
     args = parser.parse_args()
 
     if args.data_root is not None:
@@ -90,8 +98,9 @@ if __name__ == "__main__":
     else:
         coco = COCO(args.ann_file)
 
-    provider_options = get_provider_options(args.provider_options)
-    predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider, provider_options)
+    encoder_cfg = get_config(args.encoder_cfg, args.encoder_opt)
+    decoder_cfg = get_config(args.decoder_cfg, args.decoder_opt)
+    predictor = Predictor(encoder_cfg, decoder_cfg)
 
     results = []
     image_ids = coco.getImgIds()

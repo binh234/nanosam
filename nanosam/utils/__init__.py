@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .config import get_provider_options
-from .onnx_model import PROVIDERS_DICT
+from .config import get_config
+from .onnx_model import get_available_providers
 from .predictor import Predictor, upscale_mask
 from .tracker import Tracker

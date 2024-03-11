@@ -131,13 +131,4 @@ class SamOnnxModel(nn.Module):
         if self.return_single_mask:
             masks, scores = self.select_masks(masks, scores, point_coords.shape[1])
 
-        # upscaled_masks = self.mask_postprocessing(masks, orig_im_size)
-
-        # if self.return_extra_metrics:
-        #     stability_scores = calculate_stability_score(
-        #         upscaled_masks, self.model.mask_threshold, self.stability_score_offset
-        #     )
-        #     areas = (upscaled_masks > self.model.mask_threshold).sum(-1).sum(-1)
-        #     return upscaled_masks, scores, stability_scores, areas, masks
-
         return scores, masks

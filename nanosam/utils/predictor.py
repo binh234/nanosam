@@ -101,17 +101,11 @@ def upscale_mask(mask, image_shape, size=256, interpolation=cv2.INTER_LINEAR):
 class Predictor(object):
     def __init__(
         self,
-        image_encoder_path: str,
-        mask_decoder_path: str,
-        provider: str = "cpu",
-        provider_options: Any = None,
+        image_encoder_cfg,
+        mask_decoder_cfg,
     ):
-        self.image_encoder = OnnxModel(
-            image_encoder_path, provider=provider, provider_options=provider_options
-        )
-        self.mask_decoder = OnnxModel(
-            mask_decoder_path, provider=provider, provider_options=provider_options
-        )
+        self.image_encoder = OnnxModel(**image_encoder_cfg)
+        self.mask_decoder = OnnxModel(**mask_decoder_cfg)
         self.image_encoder_size = self.image_encoder.get_inputs()[0].shape[-1]
 
     def set_image(self, image):
