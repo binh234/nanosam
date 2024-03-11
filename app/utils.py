@@ -20,10 +20,12 @@ def point_prompt(masks, points, point_label, target_height, target_width):
         else:
             mask = annotation
         for i, point in enumerate(points):
-            if mask[point[1], point[0]] == 1 and point_label[i] == 1:
-                onemask += mask
-            if mask[point[1], point[0]] == 1 and point_label[i] == 0:
-                onemask -= mask
+            if mask[point[1], point[0]] == 1:
+                if point_label[i] == 0:
+                    onemask -= mask
+                else:
+                    onemask += mask
+                break
     onemask = onemask > 0
     return onemask, 0
 

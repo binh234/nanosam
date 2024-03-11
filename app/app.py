@@ -1,8 +1,7 @@
 import numpy as np
 
-from nanosam import Predictor
+from nanosam import Predictor, get_config
 
-import glob
 import gradio as gr
 import time
 from PIL import ImageDraw
@@ -11,18 +10,18 @@ from utils import fast_process, format_results, point_prompt
 # Most of our demo code is from [FastSAM Demo](https://huggingface.co/spaces/An-619/FastSAM). Huge thanks for AN-619.
 
 # Load the pre-trained model
-# image_encoder = "../data/resnet18_image_encoder.onnx"
-# mask_decoder = "../data/mobile_sam_mask_decoder.onnx"
-image_encoder = "../data/efficientvit_sam_l0_vit_h.encoder.onnx"
-mask_decoder = "../data/sam_vit_h_mask_decoder.onnx"
-provider = "openvino"
-
-predictor = Predictor(image_encoder, mask_decoder, provider)
+image_encoder_path = "../data/sam_pphgv2_b4_image_encoder.onnx"
+# image_encoder_path = "../data/efficientvit_l1_image_encoder.onnx"
+mask_decoder_path = "../data/efficientvit_l1_mask_decoder.onnx"
+# mask_decoder_path = "../data/mobile_sam_mask_decoder.onnx"
+image_encoder_cfg = get_config("../configs/inference/encoder.yaml", overrides=[f"path={image_encoder_path}", "provider=cpu"])
+mask_decoder_cfg = get_config("../configs/inference/decoder.yaml", overrides=[f"path={mask_decoder_path}"])
+predictor = Predictor(image_encoder_cfg, mask_decoder_cfg)
 
 # Description
 title = "<center><strong><font size='8'>Faster Segment Anything(NanoSAM)<font></strong></center>"
 
-description_p = """ ##This is a demo of [Faster Segment Anything(MobileSAM) Model](https://github.com/ChaoningZhang/MobileSAM).
+description_p = """ ## This is a demo of [Faster Segment Anything(NanoSAM) Model](https://github.com/binh234/nanosam).
                 # Instructions for point mode
                 0. Restart by click the Restart button
                 1. Select a point with Add Mask for the foreground (Must)
@@ -47,51 +46,58 @@ examples = [
 css = "h1 { text-align: center } .about { text-align: justify; padding-left: 10%; padding-right: 10%; }"
 
 
-def clear_point_data():
-    global global_points, global_point_labels
-    global_points = []
-    global_point_labels = []
+def get_empty_state():
+    return {"points": [], "point_labels": [], "features": None}
+
+
+def clear():
+    return None, None, get_empty_state()
 
 
 def set_image(image):
-    global predictor
-    print("Set image")
-    clear_point_data()
+    state = get_empty_state()
     predictor.set_image(image)
+    state["features"] = predictor.features
+    return state
 
 
 def segment_with_points(
     image,
+    state,
     better_quality=False,
     withContours=True,
     use_retina=True,
     mask_random_color=True,
 ):
-    global global_points
-    global global_point_labels
     global predictor
 
-    points = np.array(global_points)
-    point_labels = np.array(global_point_labels)
+    points = np.asarray(state["points"])
+    point_labels = np.asarray(state["point_labels"])
     if len(points) == 0 and len(point_labels) == 0:
         raise gr.Error("No points selected")
+    if len(points) != len(point_labels):
+        raise gr.Error("Mismatch length between points and point labels")
+    if state["features"] is None:
+        raise gr.Error("Image was not set correctly, please wait for a moment after uploading image before drawing points!")
 
-    img_w, img_h = image.size
+    predictor.features = state["features"]
+    predictor.image = image
     start = time.perf_counter()
     masks, scores, logits = predictor.predict(
         points=points,
         point_labels=point_labels,
     )
     end = time.perf_counter()
-    print(f"Inference time: {end - start: .2f}s")
+    print(f"Inference time: {end - start: .3f}s")
 
-    results = format_results(masks[0], scores[0], logits[0], 0)
+    # results = format_results(masks[0], scores[0], logits[0], 0)
 
-    annotations, _ = point_prompt(results, global_points, global_point_labels, img_h, img_w)
-    annotations = np.array([annotations])
+    # img_w, img_h = image.size
+    # annotations, _ = point_prompt(results, points, point_labels, img_h, img_w)
+    # annotations = np.array([annotations])
 
     fig = fast_process(
-        annotations=annotations,
+        annotations=[masks[0, scores.argmax()] > 0],
         image=image,
         scale=1,
         better_quality=better_quality,
@@ -102,21 +108,22 @@ def segment_with_points(
     )
 
     # return fig, None
-    return fig, image
+    return fig
 
 
-def get_points_with_draw(image, label, evt: gr.SelectData):
-    global global_points
-    global global_point_labels
-
+def get_points_with_draw(image, label, evt: gr.SelectData, state):
     x, y = evt.index[0], evt.index[1]
-    point_radius, point_color = 15, (255, 255, 0) if label == "Add Mask" else (
-        255,
-        0,
-        255,
+    point_radius, point_color = 15, (
+        (255, 255, 0)
+        if label == "Add Mask"
+        else (
+            255,
+            0,
+            255,
+        )
     )
-    global_points.append([x, y])
-    global_point_labels.append(1 if label == "Add Mask" else 0)
+    state["points"].append([x, y])
+    state["point_labels"].append(1 if label == "Add Mask" else 0)
 
     print(x, y, label == "Add Mask")
 
@@ -125,7 +132,7 @@ def get_points_with_draw(image, label, evt: gr.SelectData):
         [(x - point_radius, y - point_radius), (x + point_radius, y + point_radius)],
         fill=point_color,
     )
-    return image
+    return image, state
 
 
 cond_img_p = gr.Image(label="Input with points", type="pil", interactive=True)
@@ -136,6 +143,7 @@ global_points = []
 global_point_labels = []
 
 with gr.Blocks(css=css, title="Faster Segment Anything(NanoSAM)") as demo:
+    state = gr.State(value=get_empty_state())
     with gr.Row():
         with gr.Column(scale=1):
             # Title
@@ -144,7 +152,7 @@ with gr.Blocks(css=css, title="Faster Segment Anything(NanoSAM)") as demo:
     with gr.Tab("Point mode"):
         # Images
         with gr.Row(variant="panel"):
-            with gr.Column(scale=0.8):
+            with gr.Column(scale=1):
                 cond_img_p.render()
 
             with gr.Column(scale=1):
@@ -161,13 +169,13 @@ with gr.Blocks(css=css, title="Faster Segment Anything(NanoSAM)") as demo:
 
                     with gr.Column():
                         segment_btn_p = gr.Button("Start segmenting!", variant="primary")
-                        clear_btn_p = gr.Button("Restart", variant="secondary")
+                        restart_btn_p = gr.Button("Restart", variant="secondary")
 
                 gr.Markdown("Try some of the examples below ⬇️")
                 gr.Examples(
                     examples=examples,
                     inputs=[cond_img_p],
-                    # outputs=segm_img_p,
+                    outputs=[state],
                     fn=set_image,
                     run_on_click=True,
                     examples_per_page=4,
@@ -177,16 +185,9 @@ with gr.Blocks(css=css, title="Faster Segment Anything(NanoSAM)") as demo:
                 # Description
                 gr.Markdown(description_p)
 
-    cond_img_p.upload(set_image, inputs=[cond_img_p])
-    cond_img_p.select(get_points_with_draw, [cond_img_p, add_or_remove], cond_img_p)
+    cond_img_p.upload(set_image, inputs=[cond_img_p], outputs=[state])
+    cond_img_p.select(get_points_with_draw, [cond_img_p, add_or_remove, state], [cond_img_p, state])
+    segment_btn_p.click(segment_with_points, [cond_img_p, state], [segm_img_p])
+    restart_btn_p.click(clear, outputs=[cond_img_p, segm_img_p, state])
 
-    segment_btn_p.click(segment_with_points, inputs=[cond_img_p], outputs=[segm_img_p, cond_img_p])
-
-    def clear():
-        clear_point_data()
-        return None, None
-
-    clear_btn_p.click(clear, outputs=[cond_img_p, segm_img_p])
-
-demo.queue()
-demo.launch()
+demo.queue().launch()
