@@ -1,0 +1,9 @@
+path: data/efficientvit_l1_mask_decoder.onnx
+provider: tensorrt
+provider_options:
+  trt_fp16_enable: True
+  trt_profile_min_shapes: point_coords:1x1x2,point_labels:1x1
+  trt_profile_opt_shapes: point_coords:1x2x2,point_labels:1x2
+  trt_profile_max_shapes: point_coords:1x10x2,point_labels:1x10
+  trt_engine_cache_enable: True
+  trt_engine_cache_path: data/efficientvit_l1_mask_decoder_trt

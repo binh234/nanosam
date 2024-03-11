@@ -1,0 +1,9 @@
+path: data/sam_pphgv2_b4_image_encoder.onnx
+provider: tensorrt
+provider_options:
+  trt_fp16_enable: True
+  trt_profile_min_shapes: image:1x3x512x512
+  trt_profile_opt_shapes: image:1x3x512x512
+  trt_profile_max_shapes: image:1x3x512x512
+  trt_engine_cache_enable: True
+  trt_engine_cache_path: data/sam_pphgv2_b4_image_encoder_trt
