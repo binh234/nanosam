@@ -17,22 +17,37 @@ import PIL.Image
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
-from nanosam.utils.onnx_model import PROVIDERS_DICT
+from nanosam.utils import Predictor, get_config
 from nanosam.utils.owlvit import OwlVit
-from nanosam.utils.predictor import Predictor
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("image", type=str)
     parser.add_argument("--prompt", nargs="+", required=True)
-    parser.add_argument("--image_encoder", type=str, default="data/resnet18_image_encoder.onnx")
-    parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.onnx")
     parser.add_argument(
-        "--provider",
+        "--encoder_cfg",
         type=str,
-        default="cuda",
-        choices=PROVIDERS_DICT.keys(),
+        default="configs/inference/encoder.yaml",
+        help="Path to image encoder config file",
+    )
+    parser.add_argument(
+        "--decoder_cfg",
+        type=str,
+        default="configs/inference/decoder.yaml",
+        help="Path to mask decoder config file",
+    )
+    parser.add_argument(
+        "--encoder_opt",
+        type=str,
+        nargs="+",
+        help="Overridding config for image encoder",
+    )
+    parser.add_argument(
+        "--decoder_opt",
+        type=str,
+        nargs="+",
+        help="Overridding config for mask decoder",
     )
     parser.add_argument("--thresh", type=float, default=0.1)
     args = parser.parse_args()
@@ -55,7 +70,9 @@ if __name__ == "__main__":
 
     detections = detector.predict(image, texts=args.prompt)
 
-    sam_predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider)
+    encoder_cfg = get_config(args.encoder_cfg, args.encoder_opt)
+    decoder_cfg = get_config(args.decoder_cfg, args.decoder_opt)
+    sam_predictor = Predictor(encoder_cfg, decoder_cfg)
 
     sam_predictor.set_image(image)
     N = len(detections)

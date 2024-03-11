@@ -17,24 +17,32 @@ import PIL.Image
 import cv2
 import numpy as np
 import argparse
-from nanosam.utils import PROVIDERS_DICT, Predictor, Tracker, get_provider_options
+from nanosam.utils import Predictor, Tracker, get_config
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--image_encoder", type=str, default="data/resnet18_image_encoder.onnx")
-parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.onnx")
 parser.add_argument(
-    "--provider",
+    "--encoder_cfg",
     type=str,
-    default="cuda",
-    choices=PROVIDERS_DICT.keys(),
+    default="configs/inference/encoder.yaml",
+    help="Path to image encoder config file",
 )
 parser.add_argument(
-    "-opt",
-    "--provider_options",
+    "--decoder_cfg",
+    type=str,
+    default="configs/inference/decoder.yaml",
+    help="Path to mask decoder config file",
+)
+parser.add_argument(
+    "--encoder_opt",
     type=str,
     nargs="+",
-    default=None,
-    help="Provider options for model to run",
+    help="Overridding config for image encoder",
+)
+parser.add_argument(
+    "--decoder_opt",
+    type=str,
+    nargs="+",
+    help="Overridding config for mask decoder",
 )
 args = parser.parse_args()
 
@@ -44,8 +52,9 @@ def cv2_to_pil(image):
     return PIL.Image.fromarray(image)
 
 
-provider_options = get_provider_options(args.provider_options)
-predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider, provider_options)
+encoder_cfg = get_config(args.encoder_cfg, args.encoder_opt)
+decoder_cfg = get_config(args.decoder_cfg, args.decoder_opt)
+predictor = Predictor(encoder_cfg, decoder_cfg)
 
 tracker = Tracker(predictor)
 

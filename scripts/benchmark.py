@@ -17,7 +17,7 @@ import numpy as np
 import PIL.Image
 import argparse
 import time
-from nanosam.utils import PROVIDERS_DICT, Predictor, get_provider_options
+from nanosam.utils import Predictor, get_config
 
 
 def benchmark_encoder(
@@ -78,29 +78,38 @@ def benchmark_decoder(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_encoder", type=str, default="data/resnet18_image_encoder.onnx")
-    parser.add_argument("--mask_decoder", type=str, default="data/mobile_sam_mask_decoder.onnx")
     parser.add_argument(
-        "--provider",
+        "--encoder_cfg",
         type=str,
-        default="cpu",
-        choices=PROVIDERS_DICT.keys(),
+        default="configs/inference/encoder.yaml",
+        help="Path to image encoder config file",
     )
     parser.add_argument(
-        "-opt",
-        "--provider_options",
+        "--decoder_cfg",
+        type=str,
+        default="configs/inference/decoder.yaml",
+        help="Path to mask decoder config file",
+    )
+    parser.add_argument(
+        "--encoder_opt",
         type=str,
         nargs="+",
-        default=None,
-        help="Provider options for model to run",
+        help="Overridding config for image encoder",
+    )
+    parser.add_argument(
+        "--decoder_opt",
+        type=str,
+        nargs="+",
+        help="Overridding config for mask decoder",
     )
     parser.add_argument("--num_warmup", type=int, default=50)
     parser.add_argument("--num_run", type=int, default=500)
     args = parser.parse_args()
 
     # Instantiate TensorRT predictor
-    provider_options = get_provider_options(args.provider_options)
-    predictor = Predictor(args.image_encoder, args.mask_decoder, args.provider, provider_options)
+    encoder_cfg = get_config(args.encoder_cfg, args.encoder_opt)
+    decoder_cfg = get_config(args.decoder_cfg, args.decoder_opt)
+    predictor = Predictor(encoder_cfg, decoder_cfg)
 
     # Read image and run image encoder
     image = PIL.Image.open("assets/dogs.jpg")
@@ -112,10 +121,10 @@ if __name__ == "__main__":
 
     point_labels = np.array([2, 3])
 
-    print(f"Benchmarking encoder {args.image_encoder} ...")
+    print(f"Benchmarking encoder {encoder_cfg.path} ...")
     benchmark_encoder(predictor, nruns=args.num_run, nwarmup=args.num_warmup, input_data=image)
     print("-" * 80)
-    print(f"Benchmarking decoder {args.mask_decoder} ...")
+    print(f"Benchmarking decoder {decoder_cfg.path} ...")
     benchmark_decoder(
         predictor,
         points,

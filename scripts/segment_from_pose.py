@@ -16,7 +16,7 @@
 import PIL.Image
 import matplotlib.pyplot as plt
 from nanosam.utils.trt_pose import PoseDetector, pose_to_sam_points
-from nanosam.utils.predictor import Predictor
+from nanosam.utils import Predictor, get_config
 
 
 def get_torso_points(pose):
@@ -97,7 +97,9 @@ image = PIL.Image.open("assets/john_1.jpg")
 
 detections = pose_model.predict(image)
 
-sam_predictor = Predictor("data/resnet18_image_encoder.onnx", "data/mobile_sam_mask_decoder.onnx")
+encoder_cfg = get_config("configs/inference/encoder.yaml")
+decoder_cfg = get_config("configs/inference/decoder.yaml")
+sam_predictor = Predictor(encoder_cfg, decoder_cfg)
 
 pose = detections[0]
 
