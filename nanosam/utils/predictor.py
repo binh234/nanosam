@@ -29,24 +29,29 @@ def get_preprocess_shape(img_h: int, img_w: int, size: int = 512):
     return new_h, new_w
 
 
-def preprocess_image(image, size: int = 512):
-    if isinstance(image, np.ndarray):
-        image = Image.fromarray(image)
+class SamPreprocess:
+    def __init__(self, size: int = 512, normalize_input: bool = True):
+        self.size = size
+        self.normalize_input = normalize_input
+        self.mean = np.asarray([123.675, 116.28, 103.53])[:, None, None]
+        self.std = np.asarray([58.395, 57.12, 57.375])[:, None, None]
 
-    image_mean = np.asarray([123.675, 116.28, 103.53])[:, None, None]
-    image_std = np.asarray([58.395, 57.12, 57.375])[:, None, None]
+    def __call__(self, image) -> np.ndarray:
+        if isinstance(image, np.ndarray):
+            image = Image.fromarray(image)
 
-    width, height = image.size
-    resize_height, resize_width = get_preprocess_shape(height, width, size)
+        width, height = image.size
+        resize_height, resize_width = get_preprocess_shape(height, width, self.size)
 
-    image_resized = image.resize((resize_width, resize_height), resample=Image.BILINEAR)
-    image_resized = np.asarray(image_resized)
-    image_resized = np.transpose(image_resized, (2, 0, 1))
-    image_resized_normalized = (image_resized - image_mean) / image_std
-    image_tensor = np.zeros((1, 3, size, size), dtype=np.float32)
-    image_tensor[0, :, :resize_height, :resize_width] = image_resized_normalized
+        image_resized = image.resize((resize_width, resize_height), resample=Image.BILINEAR)
+        image_resized = np.asarray(image_resized)
+        image_resized = np.transpose(image_resized, (2, 0, 1))
+        if self.normalize_input:
+            image_resized = (image_resized - self.mean) / self.std
+        image_tensor = np.zeros((1, 3, self.size, self.size), dtype=np.float32)
+        image_tensor[0, :, :resize_height, :resize_width] = image_resized
 
-    return image_tensor
+        return image_tensor
 
 
 def preprocess_points(points, image_size, size: int = 1024):
@@ -104,13 +109,15 @@ class Predictor(object):
         image_encoder_cfg,
         mask_decoder_cfg,
     ):
+        self.normalize_input = image_encoder_cfg.pop("normalize_input", True)
         self.image_encoder = OnnxModel(**image_encoder_cfg)
         self.mask_decoder = OnnxModel(**mask_decoder_cfg)
         self.image_encoder_size = self.image_encoder.get_inputs()[0].shape[-1]
+        self.preprocess = SamPreprocess(self.image_encoder_size, self.normalize_input)
 
     def set_image(self, image):
         self.image = image
-        self.image_tensor = preprocess_image(image, self.image_encoder_size)
+        self.image_tensor = self.preprocess(image)
         self.features = self.image_encoder(self.image_tensor)[0]
 
     def predict(self, points, point_labels, mask_input=None):
