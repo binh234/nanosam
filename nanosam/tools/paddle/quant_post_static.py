@@ -7,7 +7,7 @@ import paddleslim
 from ppcls.utils import config as conf
 from ppcls.utils.logger import init_logger
 
-from .loader import build_dataloader
+from nanosam.tools.paddle.loader import build_dataloader
 
 
 def main():
