@@ -141,7 +141,7 @@ class Engine(object):
         self.eval_metric_func = None
 
         # build model
-        self.model = build_model(self.config["Arch"])
+        self.model = build_model(self.config, self.mode)
         # set @to_static for benchmark, skip this by default.
         apply_to_static(self.config, self.model)
         if self.config["Global"].get("print_model", False):

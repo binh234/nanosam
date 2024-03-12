@@ -2,6 +2,8 @@ import copy
 import math
 import paddle
 import paddle.nn as nn
+from ppcls.arch.backbone.base.theseus_layer import TheseusLayer
+from ppcls.arch.slim import prune_model, quantize_model
 from typing import Dict, Union
 
 from .backbone.pp_hgnet import PPHGNetBackbone_small, PPHGNetBackbone_tiny
@@ -23,14 +25,18 @@ from .neck import ConvNeck, SamNeck
 from .nn.norm import LayerNorm2D
 
 
-def build_model(config):
-    arch_config = copy.deepcopy(config)
+def build_model(config, mode="train"):
+    arch_config = copy.deepcopy(config["Arch"])
     model_type = arch_config.pop("name")
     model = eval(model_type)(**arch_config)
+
+    if isinstance(model, TheseusLayer):
+        prune_model(config, model)
+        quantize_model(config, model, mode)
     return model
 
 
-class ImageEncoder(nn.Layer):
+class ImageEncoder(TheseusLayer):
     def __init__(
         self,
         backbone: Union[Dict, nn.Layer],
