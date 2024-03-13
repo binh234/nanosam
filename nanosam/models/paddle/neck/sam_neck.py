@@ -69,7 +69,7 @@ class SamNeck(DAGBlock):
                     out_channels=head_width,
                     conv_kxk_num=layer_num,
                     stride=1,
-                    dw_size=5,
+                    dw_size=3,
                     use_se=False,
                 )
                 middle.append(block)
