@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import numpy as np
 
-from nanosam.models.paddle import build_model
+from nanosam.models.paddle import *
 from nanosam.utils.onnx_model import OnnxModel
 
 import os
@@ -156,6 +156,11 @@ class Engine(object):
             self.teacher_model = eval(teacher_model_type)(
                 device=self.device, **teacher_model_config
             )
+            if isinstance(self.techer_model, nn.Layer):
+                load_dygraph_pretrain(
+                    self.teacher_model,
+                    teacher_model_config["path"],
+                )
         else:
             self.teacher_model = None
 
