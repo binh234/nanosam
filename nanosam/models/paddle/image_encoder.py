@@ -79,7 +79,7 @@ def Sam_PPHGNetV2_B0(
         use_lab=True,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -98,7 +98,7 @@ def Sam_PPHGNetV2_B1(
         use_lab=True,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -117,7 +117,7 @@ def Sam_PPHGNetV2_B2(
         use_lab=True,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -136,7 +136,7 @@ def Sam_PPHGNetV2_B3(
         use_lab=True,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -155,7 +155,7 @@ def Sam_PPHGNetV2_B4(
         use_lab=False,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -174,7 +174,7 @@ def Sam_PPHGNetV2_B5(
         use_lab=False,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -193,7 +193,7 @@ def Sam_PPHGNetV2_B6(
         use_lab=False,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -211,7 +211,7 @@ def Sam_PPHGNet_tiny(
         middle_op=middle_op,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -229,7 +229,7 @@ def Sam_PPHGNet_small(
         middle_op=middle_op,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -247,7 +247,7 @@ def Sam_PPLCNetV2_small(
         middle_op=middle_op,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -265,7 +265,7 @@ def Sam_PPLCNetV2_base(
         middle_op=middle_op,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -283,7 +283,7 @@ def Sam_PPLCNetV2_large(
         middle_op=middle_op,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -300,7 +300,7 @@ def Conv_PPHGNet_tiny(image_size=512, use_last_norm=False, head_depth=3, **kwarg
         pos_embedding=True,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -317,7 +317,7 @@ def Conv_PPHGNetV2_B1(image_size=512, use_last_norm=False, head_depth=3, **kwarg
         pos_embedding=True,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -334,7 +334,7 @@ def Conv_PPHGNetV2_B4(image_size=512, use_last_norm=False, head_depth=4, **kwarg
         pos_embedding=True,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model
 
 
@@ -351,5 +351,5 @@ def Conv_PPLCNetV2_base(image_size=512, use_last_norm=False, head_depth=3, **kwa
         pos_embedding=True,
     )
 
-    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm)
+    model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
     return model

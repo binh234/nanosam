@@ -28,8 +28,8 @@ class LayerNorm2D(nn.Layer):
     def forward(self, x: paddle.Tensor) -> paddle.Tensor:
         if self.use_layernorm_op:
             return F.layer_norm(
-                x.permute(0, 2, 3, 1), self.normalized_shape, self.weight, self.bias, self.eps
-            ).permute(0, 3, 1, 2)
+                x.transpose((0, 2, 3, 1)), self.normalized_shape, self.weight, self.bias, self.eps
+            ).transpose((0, 3, 1, 2))
         out = x - paddle.mean(x, axis=1, keepdim=True)
         out = out / paddle.sqrt(paddle.square(out).mean(axis=1, keepdim=True) + self.eps)
         out = out * self.weight[:, None, None] + self.bias[:, None, None]
