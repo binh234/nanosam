@@ -156,7 +156,7 @@ class Engine(object):
             self.teacher_model = eval(teacher_model_type)(
                 device=self.device, **teacher_model_config
             )
-            if isinstance(self.techer_model, nn.Layer):
+            if isinstance(self.teacher_model, nn.Layer):
                 load_dygraph_pretrain(
                     self.teacher_model,
                     teacher_model_config["path"],
