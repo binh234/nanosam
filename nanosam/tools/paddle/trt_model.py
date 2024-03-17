@@ -47,6 +47,9 @@ class TrtModel:
             bindings=binding_outputs, stream_handle=self.stream.cuda_stream
         )
         self.stream.synchronize()
+        
+        if len(self.outputs) == 1:
+            return self.outputs[0]
 
         return self.outputs  # paddle tensors on GPU
 
