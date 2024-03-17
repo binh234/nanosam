@@ -49,7 +49,7 @@ class ImageEncoder(TheseusLayer):
         self.neck = neck if isinstance(neck, nn.Layer) else build_model(neck)
         self.use_last_norm = use_last_norm
         if self.use_last_norm:
-            self.norm = LayerNorm2D(256)
+            self.norm = LayerNorm2D(256, use_layernorm_op=kwargs.get("use_layernorm_op", False))
 
     def forward(self, x: paddle.Tensor) -> paddle.Tensor:
         feed_dict = self.backbone(x)

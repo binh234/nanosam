@@ -1,5 +1,6 @@
 import paddle
 import paddle.nn as nn
+import paddle.nn.functional as F
 from paddle.nn.initializer import Constant
 from typing import Dict
 
@@ -9,7 +10,9 @@ __all__ = ["LayerNorm2D", "build_norm"]
 
 
 class LayerNorm2D(nn.Layer):
-    def __init__(self, num_features: int, eps: float = 1e-5, **kwargs) -> None:
+    def __init__(
+        self, num_features: int, eps: float = 1e-5, use_layernorm_op=False, **kwargs
+    ) -> None:
         super().__init__()
         self.weight = self.create_parameter(
             shape=[num_features],
@@ -20,8 +23,13 @@ class LayerNorm2D(nn.Layer):
         )
         self.normalized_shape = num_features
         self.eps = eps
+        self.use_layernorm_op = use_layernorm_op
 
     def forward(self, x: paddle.Tensor) -> paddle.Tensor:
+        if self.use_layernorm_op:
+            return F.layer_norm(
+                x.permute(0, 2, 3, 1), self.normalized_shape, self.weight, self.bias, self.eps
+            ).permute(0, 3, 1, 2)
         out = x - paddle.mean(x, axis=1, keepdim=True)
         out = out / paddle.sqrt(paddle.square(out).mean(axis=1, keepdim=True) + self.eps)
         out = out * self.weight[:, None, None] + self.bias[:, None, None]
