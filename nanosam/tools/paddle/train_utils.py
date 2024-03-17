@@ -142,7 +142,7 @@ def eval_epoch(engine, epoch_id, is_ema=False):
                 targets = engine.teacher_model(inp_np)[0]
                 targets = paddle.to_tensor(targets, place=engine.device)
             else:
-                targets = engine.teacher_model(batch[0])[0]
+                targets = engine.teacher_model(batch[0])
 
             if batch[0].shape[-1] != student_size:
                 batch[0] = F.interpolate(batch[0], (student_size, student_size), mode="bilinear")
