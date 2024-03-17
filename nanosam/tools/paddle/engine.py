@@ -161,6 +161,8 @@ class Engine(object):
                     self.teacher_model,
                     teacher_model_config["path"],
                 )
+                for param in self.teacher_model.parameters():
+                    param.trainable = False
         else:
             self.teacher_model = None
 
