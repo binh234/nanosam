@@ -17,7 +17,7 @@ import numpy as np
 import cv2
 
 from PIL import Image
-from typing import Any, Union
+from typing import Optional, Union
 
 from .onnx_model import OnnxModel
 
@@ -60,11 +60,31 @@ def preprocess_points(points, image_size, size: int = 1024):
     return points
 
 
-def run_mask_decoder(mask_decoder, features, points=None, point_labels=None, mask_input=None):
-    if points is not None:
-        assert point_labels is not None
-        assert len(points) == len(point_labels)
+def run_mask_decoder(mask_decoder, features, points, point_labels, mask_input=None):
+    """Predict masks for the given input prompts, using the image features.
 
+    Args:
+        mask_decoder (Union[OnnxModel, TrtModel]): mask decoder model
+        features (np.ndarray): image features extracted using image encoder
+        points (Union[List[int], np.ndarray]): A Nx2 array of point prompts to the
+            model. Each point is in (X,Y) in pixels.
+        point_labels (Union[List[int], np.ndarray]): A length N array of labels for
+            the point prompts.
+            0: background point
+            1: foreground point
+            2: top left box corner
+            3: bootom right box corner
+        mask_input (np.ndarray, optional): A low resolution mask input to the model,
+            typically coming from a previous prediction iteration. Has form 1xHxW,
+            where for SAM, H=W=256. Defaults to None.
+
+    Returns:
+        (np.ndarray): An array of length C containing the model's
+            predictions for the quality of each mask.
+        (np.ndarray): An array of shape CxHxW, where C is the number
+            of masks and H=W=256. These low resolution logits can be passed to
+            a subsequent iteration as mask input.
+    """
     image_point_coords = np.asarray([points], dtype=np.float32)
     image_point_labels = np.asarray([point_labels], dtype=np.float32)
 
@@ -83,7 +103,6 @@ def run_mask_decoder(mask_decoder, features, points=None, point_labels=None, mas
 
 def upscale_mask(mask, image_shape, size=256, interpolation=cv2.INTER_LINEAR):
     """
-
     Args:
         mask (np.ndarray): Input mask with shape [B, C, H, W]
         image_shape (Union[int, Tuple[int, int]]): Desired output size in (H, W) format
@@ -130,8 +149,11 @@ class Predictor(object):
             self.original_size = (img_h, img_w)
         self.image_tensor = self.preprocess(image)
         self.features = self.image_encoder(self.image_tensor)[0]
+        self.is_image_set = True
 
-    def predict(self, points, point_labels, mask_input=None):
+    def predict(
+        self, points: np.ndarray, point_labels: np.ndarray, mask_input: Optional[np.ndarray] = None
+    ):
         if not self.is_image_set:
             raise RuntimeError("An image must be set with .set_image(...) before mask prediction.")
         points = preprocess_points(points, self.original_size)
