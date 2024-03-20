@@ -140,8 +140,6 @@ class Predictor(object):
         self.original_size = None
 
     def set_image(self, image: Union[np.ndarray, Image.Image]):
-        self.reset_image()
-
         if isinstance(image, np.ndarray):
             self.original_size = image.shape[:2]
         else:
