@@ -17,7 +17,7 @@ import numpy as np
 import cv2
 
 from PIL import Image
-from typing import Any
+from typing import Any, Union
 
 from .onnx_model import OnnxModel
 
@@ -115,17 +115,30 @@ class Predictor(object):
         self.image_encoder_size = self.image_encoder.get_inputs()[0].shape[-1]
         self.preprocess = SamPreprocess(self.image_encoder_size, self.normalize_input)
 
-    def set_image(self, image):
-        self.image = image
+    def reset_image(self) -> None:
+        self.is_image_set = False
+        self.features = None
+        self.original_size = None
+
+    def set_image(self, image: Union[np.ndarray, Image.Image]):
+        self.reset_image()
+
+        if isinstance(image, np.ndarray):
+            self.original_size = image.shape[:2]
+        else:
+            img_w, img_h = image.size
+            self.original_size = (img_h, img_w)
         self.image_tensor = self.preprocess(image)
         self.features = self.image_encoder(self.image_tensor)[0]
 
     def predict(self, points, point_labels, mask_input=None):
-        points = preprocess_points(points, (self.image.height, self.image.width))
+        if not self.is_image_set:
+            raise RuntimeError("An image must be set with .set_image(...) before mask prediction.")
+        points = preprocess_points(points, self.original_size)
         mask_iou, low_res_mask = run_mask_decoder(
             self.mask_decoder, self.features, points, point_labels, mask_input
         )
 
-        hi_res_mask = upscale_mask(low_res_mask, (self.image.height, self.image.width))
+        hi_res_mask = upscale_mask(low_res_mask, self.original_size)
 
         return hi_res_mask, mask_iou, low_res_mask

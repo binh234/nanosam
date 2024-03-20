@@ -11,11 +11,14 @@ from utils import fast_process, format_results, point_prompt
 
 # Load the pre-trained model
 image_encoder_path = "../data/sam_pphgv2_b4_image_encoder.onnx"
-# image_encoder_path = "../data/efficientvit_l1_image_encoder.onnx"
-mask_decoder_path = "../data/efficientvit_l1_mask_decoder.onnx"
+mask_decoder_path = "../data/efficientvit_l0_mask_decoder.onnx"
 # mask_decoder_path = "../data/mobile_sam_mask_decoder.onnx"
-image_encoder_cfg = get_config("../configs/inference/encoder.yaml", overrides=[f"path={image_encoder_path}", "provider=cpu"])
-mask_decoder_cfg = get_config("../configs/inference/decoder.yaml", overrides=[f"path={mask_decoder_path}"])
+image_encoder_cfg = get_config(
+    "../configs/inference/encoder.yaml", overrides=[f"path={image_encoder_path}", "provider=cpu"]
+)
+mask_decoder_cfg = get_config(
+    "../configs/inference/decoder.yaml", overrides=[f"path={mask_decoder_path}"]
+)
 predictor = Predictor(image_encoder_cfg, mask_decoder_cfg)
 
 # Description
@@ -78,10 +81,13 @@ def segment_with_points(
     if len(points) != len(point_labels):
         raise gr.Error("Mismatch length between points and point labels")
     if state["features"] is None:
-        raise gr.Error("Image was not set correctly, please wait for a moment after uploading image before drawing points!")
+        raise gr.Error(
+            "Image was not set correctly, please wait for a moment after uploading image before drawing points!"
+        )
 
     predictor.features = state["features"]
-    predictor.image = image
+    img_w, img_h = image.size
+    predictor.original_size = (img_h, img_w)
     start = time.perf_counter()
     masks, scores, logits = predictor.predict(
         points=points,
@@ -92,7 +98,6 @@ def segment_with_points(
 
     # results = format_results(masks[0], scores[0], logits[0], 0)
 
-    # img_w, img_h = image.size
     # annotations, _ = point_prompt(results, points, point_labels, img_h, img_w)
     # annotations = np.array([annotations])
 
