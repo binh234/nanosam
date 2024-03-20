@@ -65,7 +65,13 @@ class ImageEncoder(TheseusLayer):
 
 
 def Sam_PPHGNetV2_B0(
-    middle_op="hgv2", head_depth=4, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+    middle_op="hgv2",
+    head_depth=4,
+    expand_ratio=1,
+    num_block=2,
+    use_last_norm=True,
+    use_lab=True,
+    **kwargs,
 ):
     backbone = PPHGNetV2Backbone_B0(**kwargs)
     neck = SamNeck(
@@ -76,7 +82,7 @@ def Sam_PPHGNetV2_B0(
         num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
-        use_lab=True,
+        use_lab=use_lab,
     )
 
     model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
@@ -84,7 +90,13 @@ def Sam_PPHGNetV2_B0(
 
 
 def Sam_PPHGNetV2_B1(
-    middle_op="hgv2", head_depth=4, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+    middle_op="hgv2",
+    head_depth=4,
+    expand_ratio=1,
+    num_block=2,
+    use_last_norm=True,
+    use_lab=True,
+    **kwargs,
 ):
     backbone = PPHGNetV2Backbone_B1(**kwargs)
     neck = SamNeck(
@@ -95,7 +107,7 @@ def Sam_PPHGNetV2_B1(
         num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
-        use_lab=True,
+        use_lab=use_lab,
     )
 
     model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
@@ -103,7 +115,13 @@ def Sam_PPHGNetV2_B1(
 
 
 def Sam_PPHGNetV2_B2(
-    middle_op="hgv2", head_depth=4, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+    middle_op="hgv2",
+    head_depth=4,
+    expand_ratio=1,
+    num_block=2,
+    use_last_norm=True,
+    use_lab=True,
+    **kwargs,
 ):
     backbone = PPHGNetV2Backbone_B2(**kwargs)
     neck = SamNeck(
@@ -114,7 +132,7 @@ def Sam_PPHGNetV2_B2(
         num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
-        use_lab=True,
+        use_lab=use_lab,
     )
 
     model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
@@ -122,7 +140,13 @@ def Sam_PPHGNetV2_B2(
 
 
 def Sam_PPHGNetV2_B3(
-    middle_op="hgv2", head_depth=5, expand_ratio=1, num_block=2, use_last_norm=True, **kwargs
+    middle_op="hgv2",
+    head_depth=5,
+    expand_ratio=1,
+    num_block=2,
+    use_last_norm=True,
+    use_lab=True,
+    **kwargs,
 ):
     backbone = PPHGNetV2Backbone_B3(**kwargs)
     neck = SamNeck(
@@ -133,7 +157,7 @@ def Sam_PPHGNetV2_B3(
         num_block=num_block,
         expand_ratio=expand_ratio,
         middle_op=middle_op,
-        use_lab=True,
+        use_lab=use_lab,
     )
 
     model = ImageEncoder(backbone, neck, use_last_norm=use_last_norm, **kwargs)
