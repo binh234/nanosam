@@ -26,7 +26,7 @@ from .nn.norm import LayerNorm2D
 
 
 def build_model(config, mode="train"):
-    arch_config = copy.deepcopy(config["Arch"])
+    arch_config = copy.deepcopy(config.get("Arch", config))
     model_type = arch_config.pop("name")
     model = eval(model_type)(**arch_config)
 
