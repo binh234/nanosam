@@ -66,11 +66,11 @@ class ImageEncoder(TheseusLayer):
 
 def Sam_PPHGNetV2_B0(
     middle_op="hgv2",
-    head_depth=4,
+    head_depth=2,
     expand_ratio=1,
-    num_block=2,
+    num_block=1,
     use_last_norm=True,
-    use_lab=True,
+    use_lab=False,
     **kwargs,
 ):
     backbone = PPHGNetV2Backbone_B0(**kwargs)
@@ -95,7 +95,7 @@ def Sam_PPHGNetV2_B1(
     expand_ratio=1,
     num_block=2,
     use_last_norm=True,
-    use_lab=True,
+    use_lab=False,
     **kwargs,
 ):
     backbone = PPHGNetV2Backbone_B1(**kwargs)
@@ -120,7 +120,7 @@ def Sam_PPHGNetV2_B2(
     expand_ratio=1,
     num_block=2,
     use_last_norm=True,
-    use_lab=True,
+    use_lab=False,
     **kwargs,
 ):
     backbone = PPHGNetV2Backbone_B2(**kwargs)
@@ -145,7 +145,7 @@ def Sam_PPHGNetV2_B3(
     expand_ratio=1,
     num_block=2,
     use_last_norm=True,
-    use_lab=True,
+    use_lab=False,
     **kwargs,
 ):
     backbone = PPHGNetV2Backbone_B3(**kwargs)
