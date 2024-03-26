@@ -20,6 +20,7 @@ from PIL import Image
 from typing import Optional, Union
 
 from .onnx_model import OnnxModel
+from .trt_model import TrtModel
 
 
 def get_preprocess_shape(img_h: int, img_w: int, size: int = 512):
@@ -129,9 +130,11 @@ class Predictor(object):
         mask_decoder_cfg,
     ):
         self.normalize_input = image_encoder_cfg.pop("normalize_input", True)
-        self.image_encoder = OnnxModel(**image_encoder_cfg)
-        self.mask_decoder = OnnxModel(**mask_decoder_cfg)
-        self.image_encoder_size = self.image_encoder.get_inputs()[0].shape[-1]
+        encoder_cls = image_encoder_cfg.pop("name", "OnnxModel")
+        self.image_encoder = eval(encoder_cls)(**image_encoder_cfg)
+        decoder_cls = mask_decoder_cfg.pop("name", "OnnxModel")
+        self.mask_decoder = eval(decoder_cls)(**mask_decoder_cfg)
+        self.image_encoder_size = self.image_encoder.get_input_shapes(0)[-1]
         self.preprocess = SamPreprocess(self.image_encoder_size, self.normalize_input)
 
     def reset_image(self) -> None:
@@ -146,7 +149,7 @@ class Predictor(object):
             img_w, img_h = image.size
             self.original_size = (img_h, img_w)
         self.image_tensor = self.preprocess(image)
-        self.features = self.image_encoder(self.image_tensor)[0]
+        self.features = self.image_encoder(self.image_tensor)
         self.is_image_set = True
 
     def predict(

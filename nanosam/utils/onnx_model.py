@@ -1,10 +1,12 @@
+from nanosam.mod import lazy_import
+
 import collections
 import collections.abc
 import platform
-from typing import Any
 import warnings
+from typing import Any
 
-import onnxruntime as ort
+ort = lazy_import("onnxruntime")
 
 PROVIDERS_DICT = {
     "cpu": "CPUExecutionProvider",
@@ -20,9 +22,11 @@ PROVIDERS_DICT = {
 
 
 def get_available_providers():
-    available_providers = ort.get_available_providers()
-    available_providers.extend(list(PROVIDERS_DICT.keys()))
-    return list(set(available_providers))
+    available_providers = set(ort.get_available_providers())
+    for key, provider_name in PROVIDERS_DICT.items():
+        if provider_name in available_providers:
+            available_providers.add(key)
+    return list(available_providers)
 
 
 def check_and_normalize_provider_args(providers, provider_options, available_provider_names):
@@ -148,7 +152,11 @@ class OnnxModel:
         ), "Number of arguments must match number of model's input"
         for name, data in zip(self.input_names, args):
             self.input_dict[name] = data
-        return self.session.run(None, self.input_dict)
+        outputs = self.session.run(None, self.input_dict)
+
+        if len(outputs) == 1:
+            return outputs[0]
+        return outputs
 
     def __call__(self, *args: Any) -> Any:
         return self.forward(*args)
@@ -156,8 +164,22 @@ class OnnxModel:
     def get_inputs(self):
         return self.session.get_inputs()
 
+    def get_input_shapes(self, index: int = None):
+        inputs = self.get_inputs()
+        if index is None:
+            return [inp.shape for inp in inputs]
+        else:
+            return inputs[index].shape
+
     def get_outputs(self):
         return self.session.get_outputs()
+
+    def get_output_shapes(self, index: int = None):
+        outputs = self.get_outputs()
+        if index is None:
+            return [out.shape for out in outputs]
+        else:
+            return outputs[index].shape
 
     def get_modelmeta(self):
         return self.session.get_modelmeta()
