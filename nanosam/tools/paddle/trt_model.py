@@ -1,6 +1,10 @@
 import numpy as np
+
+from nanosam.mod import lazy_import
+
 import paddle
-import tensorrt as trt
+
+trt = lazy_import("tensorrt")
 
 
 class TrtModel:
@@ -47,7 +51,7 @@ class TrtModel:
             bindings=binding_outputs, stream_handle=self.stream.cuda_stream
         )
         self.stream.synchronize()
-        
+
         if len(self.outputs) == 1:
             return self.outputs[0]
 
