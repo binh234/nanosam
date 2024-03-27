@@ -99,4 +99,4 @@ if __name__ == "__main__":
     for i in range(N):
         draw_detection(i)
     plt.subplots_adjust(wspace=0, hspace=0)
-    plt.savefig("out.png", bbox_inches="tight")
+    plt.savefig("data/segment_from_owl_out.png", bbox_inches="tight")

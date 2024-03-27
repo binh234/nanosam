@@ -20,6 +20,7 @@ install_requires = [
     "pillow",
     "tqdm",
     "onnx",
+    "pyyaml",
 ]
 
 extras_require = {
