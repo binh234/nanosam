@@ -1,6 +1,6 @@
 import numpy as np
 
-from nanosam import Predictor, get_config
+from nanosam import Predictor
 
 import gradio as gr
 import time
@@ -10,15 +10,15 @@ from utils import fast_process, format_results, point_prompt
 # Most of our demo code is from [FastSAM Demo](https://huggingface.co/spaces/An-619/FastSAM). Huge thanks for AN-619.
 
 # Load the pre-trained model
-image_encoder_path = "../data/sam_pphgv2_b4_image_encoder.onnx"
-mask_decoder_path = "../data/efficientvit_l0_mask_decoder.onnx"
-# mask_decoder_path = "../data/mobile_sam_mask_decoder.onnx"
-image_encoder_cfg = get_config(
-    "../configs/inference/encoder.yaml", overrides=[f"path={image_encoder_path}", "provider=cpu"]
-)
-mask_decoder_cfg = get_config(
-    "../configs/inference/decoder.yaml", overrides=[f"path={mask_decoder_path}"]
-)
+image_encoder_cfg = {
+    "path": "onnx/sam_hgv2_b4_ln_nonorm_image_encoder.onnx",
+    "provider": "cpu",
+    "normalize_input": False,
+}
+mask_decoder_cfg = {
+    "path": "onnx/efficientvit_l0_mask_decoder.onnx",
+    "provider": "cpu",
+}
 predictor = Predictor(image_encoder_cfg, mask_decoder_cfg)
 
 # Description

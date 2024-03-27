@@ -1,7 +1,9 @@
+import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-import numpy as np
-import torch
+
+import os
+import requests
 from PIL import Image
 
 
@@ -68,8 +70,6 @@ def fast_process(
     original_h = image.height
     original_w = image.width
     if better_quality:
-        if isinstance(annotations[0], torch.Tensor):
-            annotations = np.array(annotations.cpu())
         for i, mask in enumerate(annotations):
             mask = cv2.morphologyEx(
                 mask.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8)
@@ -161,3 +161,18 @@ def fast_show_mask(
         mask = cv2.resize(mask, (target_width, target_height), interpolation=cv2.INTER_NEAREST)
 
     return mask
+
+
+def download_file_from_url(url, output_file, chunk_size=8192):
+    output_dir = os.path.dirname(output_file)
+    os.makedirs(output_dir, exist_ok=True)
+    try:
+        with requests.get(url, stream=True) as response:
+            if response.status_code == 200:
+                with open(output_file, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=chunk_size):
+                        f.write(chunk)
+            else:
+                print(f"Failed to download file. Status code: {response.status_code}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
