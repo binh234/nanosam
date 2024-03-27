@@ -1,6 +1,6 @@
 Global:
   checkpoints: null
-  pretrained_model: null
+  pretrained_model:
   output_dir: /workspace/output
   append_datetime_to_output_dir: False
   device: gpu
@@ -34,11 +34,11 @@ Arch:
   name: Sam_PPHGNetV2_B2
   pretrained: True
   use_ssld: True
-  middle_op: hgv2
+  use_lab: False
 
 Teacher:
   name: TrtModel
-  path: /workspace/onnx/efficientvit_l1_image_encoder_bs8.engine
+  path: /workspace/onnx/efficientvit_prep_image_encoder_bs8.engine
 
 # loss function config for training/eval process
 Loss:
@@ -63,7 +63,7 @@ Optimizer:
   lr:
     name: Cosine
     learning_rate: 0.0005
-    warmup_epoch: 0.3
+    warmup_epoch: 0.25
     warmup_start_lr: 1e-6
     eta_min: 1e-7
 
@@ -81,11 +81,6 @@ DataLoader:
         - SamResizeImage:
             resize_long: 512
             backend: pil
-        - NormalizeImage:
-            scale: 1.0/255.0
-            mean: [0.485, 0.456, 0.406]
-            std: [0.229, 0.224, 0.225]
-            order: ""
         - SamPad:
             size: 512
             fill_value: 0
@@ -105,11 +100,6 @@ DataLoader:
         - SamResizeImage:
             resize_long: 512
             backend: pil
-        - NormalizeImage:
-            scale: 1.0/255.0
-            mean: [0.485, 0.456, 0.406]
-            std: [0.229, 0.224, 0.225]
-            order: ""
         - SamPad:
             size: 512
             fill_value: 0

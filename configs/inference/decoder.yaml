@@ -1,2 +1,2 @@
-path: data/efficientvit_l1_mask_decoder.onnx
+path: data/efficientvit_l0_mask_decoder.onnx
 provider: cpu
