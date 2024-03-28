@@ -2,11 +2,12 @@ import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
 from paddle.nn.initializer import Constant
-from typing import Dict
+from paddle.nn.layer.norm import _BatchNormBase
+from typing import Dict, Optional
 
 from .utils import build_kwargs_from_config
 
-__all__ = ["LayerNorm2D", "build_norm"]
+__all__ = ["LayerNorm2D", "build_norm", "set_norm_eps"]
 
 
 class LayerNorm2D(nn.Layer):
@@ -47,7 +48,7 @@ REGISTERED_NORM_DICT: Dict[str, type] = {
 }
 
 
-def build_norm(name="bn2d", num_features=None, **kwargs) -> nn.Layer or None:
+def build_norm(name="bn2d", num_features=None, **kwargs) -> Optional[nn.Layer]:
     if isinstance(name, str):
         name = name.lower()
     if name == "ln":
@@ -60,3 +61,13 @@ def build_norm(name="bn2d", num_features=None, **kwargs) -> nn.Layer or None:
         return norm_cls(**args)
     else:
         return None
+
+
+def set_norm_eps(model: nn.Module, eps: Optional[float] = None) -> None:
+    if eps is None:
+        return
+    for m in model.modules():
+        if isinstance(m, (nn.GroupNorm, nn.LayerNorm, _BatchNormBase)):
+            m._epsilon = eps
+        elif isinstance(m, LayerNorm2D):
+            m.eps = eps
