@@ -63,10 +63,10 @@ def build_norm(name="bn2d", num_features=None, **kwargs) -> Optional[nn.Layer]:
         return None
 
 
-def set_norm_eps(model: nn.Module, eps: Optional[float] = None) -> None:
+def set_norm_eps(model: nn.Layer, eps: Optional[float] = None) -> None:
     if eps is None:
         return
-    for m in model.modules():
+    for m in model.sublayers():
         if isinstance(m, (nn.GroupNorm, nn.LayerNorm, _BatchNormBase)):
             m._epsilon = eps
         elif isinstance(m, LayerNorm2D):
