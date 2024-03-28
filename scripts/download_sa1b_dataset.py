@@ -8,7 +8,10 @@ import argparse
 def download_and_extract_tar_file(url, path, name=None):
     response = requests.get(url, stream=True)
     with tarfile.open(fileobj=response.raw, mode="r|*") as tar:
-        tar.extractall(path=path)
+        if tarfile.hasattr("data_filter"):
+            tar.extractall(path=path, filter="data")
+        else:
+            tar.extractall(path=path)
 
     if name:
         print(f"[INFO] Finish downloading for {name}")
