@@ -4,12 +4,12 @@
 
 NanoSAM is a [Segment Anything (SAM)](https://github.com/facebookresearch/segment-anything) and [EfficientViT-SAM](https://github.com/mit-han-lab/efficientvit) model variant that is developed to target 🔥***CPU, mobile, and edge*** 🔥  deployment such as [NVIDIA Jetson Xavier Platforms](https://store.nvidia.com/en-us/jetson/store) with [NVIDIA TensorRT](https://developer.nvidia.com/tensorrt).  
 
-**A demo of NanoSAM** running on **CPU** is open at [hugging face demo](https://huggingface.co/spaces/dragonSwing/nanosam). On our own i5-8265U CPU, it only takes around 0.3s. On the hugging face demo, the interface and inferior CPUs make it a little bit slower but still works fine.
+**A demo of NanoSAM** running on **CPU** is open at [hugging face demo](https://huggingface.co/spaces/dragonSwing/nanosam). On our own i5-8265U CPU, it only takes around 0.3s. On the hugging face demo, the interface and inferior CPUs make it a little bit slower but still works fine. You can also run a demo of NanoSAM on [your local PC](https://github.com/binh234/nanosam/tree/master/app)
 
 <p align="center"><img src="assets/basic_usage_out.jpg" height="256px"/></p>
 
 > NanoSAM is trained by distilling the [EfficientViT-SAM-L0](https://github.com/mit-han-lab/efficientvit) image encoder
-> on unlabeled images using 6% of SA-1B dataset.  For an introduction to knowledge distillation, we recommend checking out [this tutorial](https://github.com/NVIDIA-AI-IOT/jetson-intro-to-distillation).
+> on unlabeled images using 6% of [SA-1B](https://ai.meta.com/datasets/segment-anything/) dataset.  For an introduction to knowledge distillation, we recommend checking out [this tutorial](https://github.com/NVIDIA-AI-IOT/jetson-intro-to-distillation).
 
 <a id="usage"></a>
 
