@@ -64,14 +64,14 @@ def check_and_normalize_provider_args(providers, provider_options, available_pro
                 "Available providers: '{}'".format(name, ", ".join(available_provider_names))
             )
 
-        if name in provider_name_to_options:
-            warnings.warn("Duplicate provider '{}' encountered, ignoring.".format(name))
-            return
-
         if name in ["cpu_fp32", "gpu_fp32", "gpu_fp16"] and options is None:
             options = {"device_type": provider.upper()}
 
         name = PROVIDERS_DICT.get(name, name)
+        if name in provider_name_to_options:
+            warnings.warn("Duplicate provider '{}' encountered, ignoring.".format(name))
+            return
+
         if platform.system() == "Windows" and name == "OpenVINOExecutionProvider":
             # noqa
             from openvino import utils
