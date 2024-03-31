@@ -58,7 +58,7 @@ if __name__ == "__main__":
     predictor.set_image(image)
 
     # Segment using bounding box
-    bbox = [100, 100, 850, 759]  # x0, y0, x1, y1
+    bbox = [100, 100, 770, 759]  # x1, y1, x2, y2
 
     points = np.array([[bbox[0], bbox[1]], [bbox[2], bbox[3]]])
 
