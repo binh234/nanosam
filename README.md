@@ -15,7 +15,7 @@ NanoSAM is a [Segment Anything (SAM)](https://github.com/facebookresearch/segmen
 
 ## 👍 Usage
 
-Using NanoSAM from Python looks like this
+Using NanoSAM from Python looks like this. You can also see the notebook [here](notebooks/getting_started.ipynb) for more details
 
 ```python3
 from nanosam.utils.predictor import Predictor
@@ -228,7 +228,7 @@ If you want to run SAM with TensorRT FP16, please follow these steps
         --onnx=data/efficientvit_l0_mask_decoder.onnx \
         --saveEngine=data/efficientvit_l0_mask_decoder.engine \
         --minShapes=point_coords:1x1x2,point_labels:1x1 \
-        --optShapes=point_coords:1x1x2,point_labels:1x1 \
+        --optShapes=point_coords:1x2x2,point_labels:1x2 \
         --maxShapes=point_coords:1x4x2,point_labels:1x4 \
         --fp16
     ```
@@ -245,8 +245,8 @@ If you want to run SAM with TensorRT FP16, please follow these steps
 
     ```bash
     trtexec \
-        --onnx=data/sam_hgv2_b4_ln_nonorm_mask_decoder.onnx \
-        --saveEngine=data/sam_hgv2_b4_ln_nonorm_mask_decoder.engine \
+        --onnx=data/sam_hgv2_b4_ln_nonorm_image_encoder.onnx \
+        --saveEngine=data/sam_hgv2_b4_ln_nonorm_image_encoder.engine \
         --fp16
     ```
 
@@ -256,7 +256,7 @@ If you want to run SAM with TensorRT FP16, please follow these steps
     - Download alternative models from [here](https://huggingface.co/dragonSwing/nanosam/tree/main/op11) that are exported in opset 11
     - Install [Polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy)
 
-    ```bash
+  ```bash
     python -m pip install colored polygraphy --extra-index-url https://pypi.ngc.nvidia.com
     ```
 
@@ -267,8 +267,8 @@ If you want to run SAM with TensorRT FP16, please follow these steps
     <summary>PPHGV2 B4</summary>
 
     ```bash
-    polygraphy convert onnx/sam_hgv2_b4_nonorm_image_encoder.onnx \
-        -o onnx/sam_pphgv2_b4_nonorm_image_encoder.engine \
+    polygraphy convert data/sam_hgv2_b4_nonorm_image_encoder.onnx \
+        -o data/sam_pphgv2_b4_nonorm_image_encoder.engine \
         --precision-constraints obey \
         --layer-precisions p2o.ReduceMean.2:float32 p2o.Sub.0:float32 p2o.Mul.0:float32 p2o.Add.14:float32 p2o.Sqrt.0:float32 p2o.Div.0:float32 p2o.Mul.1:float32 p2o.Add.16:float32 \
         --fp16 --pool-limit workspace:2G
@@ -281,8 +281,8 @@ If you want to run SAM with TensorRT FP16, please follow these steps
     <summary>PPHGV2 B2</summary>
 
     ```bash
-    polygraphy convert onnx/sam_hgv2_b2_nonorm_image_encoder.onnx \
-        -o onnx/sam_pphgv2_b2_nonorm_image_encoder.engine \
+    polygraphy convert data/sam_hgv2_b2_nonorm_image_encoder.onnx \
+        -o data/sam_pphgv2_b2_nonorm_image_encoder.engine \
         --precision-constraints obey \
         --layer-precisions p2o.ReduceMean.2:float32 p2o.Sub.0:float32 p2o.Mul.82:float32 p2o.Add.96:float32 p2o.Sqrt.0:float32 p2o.Div.0:float32 p2o.Mul.83:float32 p2o.Add.98:float32 \
         --fp16 --pool-limit workspace:2G
@@ -295,8 +295,8 @@ If you want to run SAM with TensorRT FP16, please follow these steps
     <summary>PPHGV2 B1</summary>
 
     ```bash
-    polygraphy convert onnx/sam_hgv2_b1_nonorm_image_encoder.onnx \
-        -o onnx/sam_pphgv2_b1_nonorm_image_encoder.engine \
+    polygraphy convert data/sam_hgv2_b1_nonorm_image_encoder.onnx \
+        -o data/sam_pphgv2_b1_nonorm_image_encoder.engine \
         --fp16 \
         --precision-constraints obey \
         --layer-precisions p2o.ReduceMean.2:float32 p2o.Sub.0:float32 p2o.Mul.60:float32 p2o.Add.72:float32 p2o.Sqrt.0:float32 p2o.Div.0:float32 p2o.Mul.61:float32 p2o.Add.74:float32 \
