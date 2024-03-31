@@ -256,7 +256,7 @@ If you want to run SAM with TensorRT FP16, please follow these steps
     - Download alternative models from [here](https://huggingface.co/dragonSwing/nanosam/tree/main/op11) that are exported in opset 11
     - Install [Polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy)
 
-  ```bash
+    ```bash
     python -m pip install colored polygraphy --extra-index-url https://pypi.ngc.nvidia.com
     ```
 
@@ -304,6 +304,16 @@ If you want to run SAM with TensorRT FP16, please follow these steps
     ```
 
     </details>
+
+3. Run inference
+
+    > Change the path inside config files to point to the correct engine
+
+    ```bash
+    python3 scripts/basic_usage.py \
+        --encoder_cfg configs/inference/encoder_tensorrt.yaml \
+        --decoder_cfg configs/inference/decoder_tensorrt.yaml
+    ```
 
 <a id="examples"></a>
 
@@ -498,8 +508,9 @@ truth masks
 
     ```bash
     python3 -m nanosam.tools.eval_coco \
-        --coco_root=data/coco/val2017 \
-        --coco_ann=data/coco/annotations/instances_val2017.json \
+        --data_root=data/coco \
+        --img_dir=val2017 \
+        --ann_file=annotations/instances_val2017.json \
         --encoder_cfg configs/inference/encoder.yaml \
         --decoder_cfg configs/inference/decoder.yaml
         --output=data/hgv2_b4_coco_results.json
