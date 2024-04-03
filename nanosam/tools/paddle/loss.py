@@ -27,7 +27,7 @@ class DistanceLoss(nn.Layer):
 
         if self.reduction == "mean":
             loss = loss.mean()
-        elif self.reduction == "mean":
+        elif self.reduction == "sum":
             loss = loss.sum()
         elif self.reduction == "size_sum":
             loss = loss.sum(1).mean()
@@ -57,7 +57,7 @@ class CombinedLoss(nn.Layer):
 
     def __call__(self, input, batch):
         loss_dict = {}
-        # just for accelerate classification traing speed
+        # just for accelerate training speed
         if len(self.loss_func) == 1:
             loss = self.loss_func[0](input, batch)
             loss_dict.update(loss)
